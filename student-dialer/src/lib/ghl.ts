@@ -39,6 +39,20 @@ type FetchInit = Omit<RequestInit, "headers"> & {
   headers?: Record<string, string>;
 };
 
+const GHL_ORIGIN = new URL(GHL_API_BASE_URL).origin;
+
+/**
+ * Validate and encode a value used as a URL path segment. GHL ids are
+ * alphanumeric. Anything else (slashes, dots, colons) could steer the
+ * request path, so reject it outright rather than encode around it.
+ */
+function ghlPathId(value: string, label: string): string {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(value)) {
+    throw new GHLError(400, `invalid ${label}`, `Invalid ${label}.`);
+  }
+  return encodeURIComponent(value);
+}
+
 // ============================================================
 // Concurrency limit (semaphore)
 // ============================================================
@@ -89,7 +103,13 @@ async function ghlFetch<T = unknown>(
   path: string,
   init: FetchInit = {},
 ): Promise<T> {
-  const url = `${GHL_API_BASE_URL}${path}`;
+  // Resolve against the fixed API base and refuse anything that does
+  // not land on the GHL origin, so no caller-supplied value can ever
+  // redirect a request (and our bearer token) somewhere else.
+  const url = new URL(path, GHL_API_BASE_URL);
+  if (url.origin !== GHL_ORIGIN) {
+    throw new GHLError(400, "foreign origin", "Refusing non-GHL request URL.");
+  }
 
   await ghlSemaphore.acquire();
   try {
@@ -185,7 +205,7 @@ export async function getContact(contactId: string): Promise<GHLContact> {
   }
 
   const data = await ghlFetch<{ contact: GHLContact }>(
-    `/contacts/${contactId}`,
+    `/contacts/${ghlPathId(contactId, "contact id")}`,
   );
 
   contactCache.set(contactId, {
@@ -251,7 +271,7 @@ export async function searchContacts(params: {
  * Used by the dashboard's click-to-open flow.
  */
 export function getGHLContactURL(contactId: string): string {
-  return `${GHL_APP_BASE_URL}/v2/location/${GHL_LOCATION_ID}/contacts/detail/${contactId}`;
+  return `${GHL_APP_BASE_URL}/v2/location/${GHL_LOCATION_ID}/contacts/detail/${ghlPathId(contactId, "contact id")}`;
 }
 
 // ============================================================
@@ -294,7 +314,7 @@ export async function assignContactToUser(
   contactId: string,
   ghlUserId: string,
 ): Promise<void> {
-  await ghlFetch(`/contacts/${contactId}`, {
+  await ghlFetch(`/contacts/${ghlPathId(contactId, "contact id")}`, {
     method: "PUT",
     body: JSON.stringify({ assignedTo: ghlUserId }),
   });
@@ -307,7 +327,7 @@ export async function addContactTags(
   contactId: string,
   tags: string[],
 ): Promise<void> {
-  await ghlFetch(`/contacts/${contactId}/tags`, {
+  await ghlFetch(`/contacts/${ghlPathId(contactId, "contact id")}/tags`, {
     method: "POST",
     body: JSON.stringify({ tags }),
   });
@@ -323,7 +343,7 @@ export async function addContactNote(
   body: string,
   userId?: string,
 ): Promise<void> {
-  await ghlFetch(`/contacts/${contactId}/notes`, {
+  await ghlFetch(`/contacts/${ghlPathId(contactId, "contact id")}/notes`, {
     method: "POST",
     body: JSON.stringify({ body, userId }),
   });
@@ -343,7 +363,7 @@ export async function createContactTask(params: {
   completed?: boolean;
 }): Promise<{ id: string }> {
   const result = await ghlFetch<{ task?: { id: string }; id?: string }>(
-    `/contacts/${params.contactId}/tasks`,
+    `/contacts/${ghlPathId(params.contactId, "contact id")}/tasks`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -373,7 +393,9 @@ export async function getFreeSlots(params: {
     endDate: String(params.endDate),
   });
   if (params.timezone) qs.set("timezone", params.timezone);
-  return ghlFetch(`/calendars/${params.calendarId}/free-slots?${qs}`);
+  return ghlFetch(
+    `/calendars/${ghlPathId(params.calendarId, "calendar id")}/free-slots?${qs}`,
+  );
 }
 
 /**
