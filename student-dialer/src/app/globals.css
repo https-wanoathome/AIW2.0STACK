@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand: black, white, silver, red. Techy. */
+  --background: #000000;
+  --foreground: #f5f5f5;
+  --silver: #a8a8b3;
+  --silver-muted: #6b6b75;
+  --red: #ef4444;
+  --red-muted: #b91c1c;
+  /* Gold accent: used sparingly on hero metric numbers per design
+     inspiration. Restrained warm gold, not gaudy. */
+  --gold: #d4af37;
+  --gold-muted: #a17e29;
+  /* Cards lifted slightly so they distinguish themselves from the page
+     background without needing a heavy border. Inspired by the Esseles
+     design reference (cards are subtly lighter than the page, borders
+     are barely there). */
+  --card: #111111;
+  --card-elevated: #1a1a1a;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-silver: var(--silver);
+  --color-silver-muted: var(--silver-muted);
+  --color-red: var(--red);
+  --color-red-muted: var(--red-muted);
+  --color-gold: var(--gold);
+  --color-gold-muted: var(--gold-muted);
+  --color-card: var(--card);
+  --color-card-elevated: var(--card-elevated);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-anton);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Slightly looser line-height than browser default for easier reading
+     of dense dashboard text. Affects content that doesn't have an
+     explicit leading-X Tailwind class. */
+  line-height: 1.55;
+  /* Disable text size auto-adjust on mobile rotation so things don't
+     unexpectedly upsize. */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Mobile: stop horizontal scroll caused by accidental wide elements. */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* Smooth momentum scroll for overflow-x tables on touch devices. */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  /* Prevents accidental vertical scroll lockup during horizontal swipe. */
+  overscroll-behavior-x: contain;
+}
+
+/* Universal focus-visible ring for keyboard nav. Tailwind doesn't apply
+   one by default, and dark themes hide the native ring. Subtle red
+   ring matches the brand. */
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Mobile tap targets: bump native button + link min-height to 40px when
+   the user is on a small viewport. Doesn't affect explicit padding. */
+@media (max-width: 640px) {
+  button,
+  a {
+    min-height: 36px;
+  }
+  /* Allow inline buttons/links to override if they need a smaller hit
+     area (e.g. table sort headers). */
+  button.inline,
+  a.inline {
+    min-height: 0;
+  }
+}
+
+/* Subtle grid texture for techy feel */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Display headline utility: heavy condensed uppercase, tight tracking.
+   Use for cinematic top-level page titles, hero numbers, big stat
+   counters. The terminal period style ("DIAL CONSOLE.") is part of
+   the visual language; add it inline in the JSX, not here. */
+.font-display {
+  font-family: var(--font-anton), Impact, "Helvetica Neue Condensed Bold",
+    sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+/* Success toast fade-in (used by SuccessToast component) */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
