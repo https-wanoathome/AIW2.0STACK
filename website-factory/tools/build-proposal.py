@@ -272,11 +272,83 @@ def compose_agency_vars(brand: dict[str, Any]) -> dict[str, str]:
     formula = brand.get("winning_formula", {}) or {}
     reasons = brand.get("three_reasons", []) or []
     niche = brand.get("niche", {}) or {}
+    traffic = (formula.get("traffic", {}) or {})
 
     def reason_field(idx: int, key: str) -> str:
         if idx < len(reasons):
             return reasons[idx].get(key, "") or ""
         return ""
+
+    # Niche transaction/conversion/team vocabulary. These keep the proposal
+    # niche-agnostic: a roofer's "job/estimate/crew" becomes a detailer's
+    # "detail/quote/team" purely from agency-brand.json niche.* fields.
+    # Plurals fall back to <singular>+"s" when not explicitly provided.
+    txn_noun = niche.get("transaction_noun", "job") or "job"
+    txn_noun_plural = niche.get("transaction_noun_plural") or (txn_noun + "s")
+    conv_noun = niche.get("conversion_noun", "estimate") or "estimate"
+    conv_noun_plural = niche.get("conversion_noun_plural") or (conv_noun + "s")
+    team_noun = niche.get("team_noun", "crew") or "crew"
+
+    # Pricing-engine catalog + base prices. These come ONLY from
+    # agency-brand.json pricing.* (never any hardcoded literal). The four
+    # *_JSON vars are emitted as valid JSON so they drop straight into a JS
+    # literal inside the template (e.g. `var AGENCY_ADDONS = {{AGENCY_ADDONS_JSON}};`).
+    base_setup = pricing.get("base_setup", 5000)
+    try:
+        base_setup = int(base_setup)
+    except (TypeError, ValueError):
+        base_setup = 5000
+    base_monthly = pricing.get("base_monthly", 297)
+    try:
+        base_monthly = int(base_monthly)
+    except (TypeError, ValueError):
+        base_monthly = 297
+    addons = pricing.get("addons", []) or []
+    freebies = pricing.get("freebies", []) or []
+    freebie_durations = pricing.get("freebie_durations") or [1, 3, 6]
+    success_checklist = pricing.get("success_checklist", []) or []
+
+    # Niche vocabulary, composed once. Used for the return map below AND to
+    # resolve {{NICHE_*}} tokens embedded in catalog copy (success_checklist,
+    # addon/freebie names) before json.dumps.
+    niche_vocab = {
+        "NICHE_NOUN": niche.get("noun", "trades"),
+        "NICHE_NOUN_TITLE": niche.get("noun_title", "Trades"),
+        "NICHE_NOUN_TITLE_PLURAL": niche.get("noun_title_plural", niche.get("noun_title", "Trades") + "s"),
+        "NICHE_VERB": niche.get("verb", "service"),
+        "NICHE_END_CUSTOMER": niche.get("end_customer", "customer"),
+        "NICHE_END_CUSTOMER_TITLE": niche.get("end_customer_title", niche.get("end_customer", "customer").title()),
+        "NICHE_END_CUSTOMER_PLURAL": niche.get("end_customer_plural", niche.get("end_customer", "customer") + "s"),
+        "NICHE_END_CUSTOMER_TITLE_PLURAL": niche.get("end_customer_title_plural", niche.get("end_customer", "customer").title() + "s"),
+        "NICHE_LEAD_MAGNET_CTA": niche.get("lead_magnet_cta", "Book My Free Assessment"),
+        "OWNER_PRONOUN_SUBJ": brand.get("owner_pronoun_subj", "they"),
+        "NICHE_TRANSACTION_NOUN": txn_noun,
+        "NICHE_TRANSACTION_NOUN_PLURAL": txn_noun_plural,
+        "NICHE_CONVERSION_NOUN": conv_noun,
+        "NICHE_CONVERSION_NOUN_PLURAL": conv_noun_plural,
+        "NICHE_TEAM_NOUN": team_noun,
+    }
+
+    def _resolve_niche(text: str) -> str:
+        for _k, _v in niche_vocab.items():
+            text = text.replace("{{" + _k + "}}", str(_v))
+        return text
+
+    # substitute() is a single ordered pass, so a {{NICHE_*}} left inside an
+    # injected JSON literal would never get resolved and would leak into the
+    # rendered proposal, tripping the zero-{{VAR}} gate. Resolve niche tokens
+    # in catalog copy here, before json.dumps.
+    success_checklist = [_resolve_niche(str(s)) for s in success_checklist]
+    addons = [
+        {**a, "name": _resolve_niche(str(a.get("name", ""))), "desc": _resolve_niche(str(a.get("desc", "")))}
+        if isinstance(a, dict) else a
+        for a in addons
+    ]
+    freebies = [
+        {**f, "name": _resolve_niche(str(f.get("name", "")))}
+        if isinstance(f, dict) else f
+        for f in freebies
+    ]
 
     return {
         # Agency identity
@@ -328,17 +400,20 @@ def compose_agency_vars(brand: dict[str, Any]) -> dict[str, str]:
         "AGENCY_PRICING_MONTHLY_FEE": str(pricing.get("monthly_fee_default_usd", "")),
         "AGENCY_PRICING_CURRENCY": pricing.get("currency", "USD"),
 
-        # Niche vocabulary (from agency-brand.json niche.{} block — sentinel-driven)
-        "NICHE_NOUN": niche.get("noun", "trades"),
-        "NICHE_NOUN_TITLE": niche.get("noun_title", "Trades"),
-        "NICHE_NOUN_TITLE_PLURAL": niche.get("noun_title_plural", niche.get("noun_title", "Trades") + "s"),
-        "NICHE_VERB": niche.get("verb", "service"),
-        "NICHE_END_CUSTOMER": niche.get("end_customer", "customer"),
-        "NICHE_END_CUSTOMER_TITLE": niche.get("end_customer_title", niche.get("end_customer", "customer").title()),
-        "NICHE_END_CUSTOMER_PLURAL": niche.get("end_customer_plural", niche.get("end_customer", "customer") + "s"),
-        "NICHE_END_CUSTOMER_TITLE_PLURAL": niche.get("end_customer_title_plural", niche.get("end_customer", "customer").title() + "s"),
-        "NICHE_LEAD_MAGNET_CTA": niche.get("lead_magnet_cta", "Book My Free Assessment"),
-        "OWNER_PRONOUN_SUBJ": brand.get("owner_pronoun_subj", "they"),
+        # Niche vocabulary (noun / end-customer set + the 5 transaction /
+        # conversion / team tokens), composed once into niche_vocab above.
+        **niche_vocab,
+
+        # Traffic accordion SEO audit heading
+        "AGENCY_TRAFFIC_AUDIT_HEADING": traffic.get("audit_heading", "What we do on your SEO, from day one"),
+
+        # Pricing engine — base prices (raw ints for the JS calculator) + JSON catalogs
+        "AGENCY_PRICING_BASE_SETUP": str(base_setup),
+        "AGENCY_PRICING_BASE_MONTHLY": str(base_monthly),
+        "AGENCY_ADDONS_JSON": json.dumps(addons),
+        "AGENCY_FREEBIES_JSON": json.dumps(freebies),
+        "AGENCY_FREEBIE_DURATIONS_JSON": json.dumps(freebie_durations),
+        "AGENCY_SUCCESS_CHECKLIST_JSON": json.dumps(success_checklist),
 
         # Footer tagline + AI mock messages + form privacy
         "AGENCY_FOOTER_TAGLINE": brand.get("footer_tagline", f"Built by {brand.get('name', 'the agency')}."),
@@ -610,6 +685,63 @@ def inject_traffic_audit_bullets(html: str, brand: dict[str, Any]) -> str:
     )
 
 
+def inject_traffic_channels(html: str, brand: dict[str, Any]) -> str:
+    """Replace the AGENCY_TRAFFIC_CHANNELS marker with tab buttons + panes from
+    winning_formula.traffic.channels[] (each {label, description}).
+
+    Emits the exact markup the template already styles (.channel-tabs /
+    .channel-tab / .channel-pane / .channel-pane-head / .channel-pane-title)
+    and scripts (the .channel-tab[data-channel] -> .channel-pane[data-channel]
+    swap handler). data-channel is the slugified label so each tab maps to its
+    pane. Channels carry NO price (Juan dropped ad pricing from the channel
+    tabs). The first channel is rendered active; the rest are hidden. With no
+    channels configured the template's default block is left untouched.
+    """
+    wf = brand.get("winning_formula", {}) or {}
+    channels = (wf.get("traffic", {}) or {}).get("channels", []) or []
+    if not channels:
+        return html
+
+    buttons: list[str] = []
+    panes: list[str] = []
+    for i, ch in enumerate(channels):
+        label = ch.get("label", "")
+        desc = ch.get("description", "")
+        slug = slugify(label) or f"channel-{i}"
+        active = " is-active" if i == 0 else ""
+        hidden = "" if i == 0 else " hidden"
+        buttons.append(
+            f'<button type="button" class="channel-tab{active}" data-channel="{slug}" '
+            f'role="tab" aria-selected="{"true" if i == 0 else "false"}">{_html_attr(label)}</button>'
+        )
+        panes.append(
+            f'<div class="channel-pane" data-channel="{slug}"{hidden}>\n'
+            f'          <div class="channel-pane-head">\n'
+            f'            <h4 class="channel-pane-title">{_html_attr(label)}</h4>\n'
+            f'            <p class="channel-pane-desc">{desc}</p>\n'
+            f'          </div>\n'
+            f'        </div>'
+        )
+
+    injected = (
+        '<div class="channel-tabs" role="tablist" aria-label="Traffic channels">\n          '
+        + "\n          ".join(buttons)
+        + '\n        </div>\n        '
+        + "\n        ".join(panes)
+    )
+    replacement = (
+        "<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->\n        "
+        + injected
+        + "\n        <!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->"
+    )
+    return re.sub(
+        r"<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->.*?<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->",
+        lambda _m: replacement,
+        html,
+        flags=re.DOTALL,
+    )
+
+
 def copy_agency_assets(proposal_dir: Path) -> None:
     """Copy clients/_agency/assets/* into the per-client proposal's agency-assets/."""
     target = proposal_dir / "agency-assets"
@@ -760,6 +892,24 @@ def compose_vars(client_name: str, paths: dict[str, Path]) -> dict[str, str]:
         "",
     )
 
+    # License + address display strings (empty-safe). These sit inside a
+    # commented GMB mini-card block in the template, so an empty value is
+    # safe; we only fill them when the client data carries them.
+    license_display = pick_first(
+        get_path(brand_dna, "company.licenseNumber"),
+        get_path(brand_dna, "company.certifications.license_number"),
+        intake.get("licenseNumber"),
+        research.get("licenseNumber"),
+        "",
+    ) or ""
+    address_display = pick_first(
+        get_path(brand_dna, "address.full"),
+        intake.get("address"),
+        research.get("address"),
+        get_path(research, "gbp.address"),
+        "",
+    ) or ""
+
     # Pricing
     setup_fee_default = pick_first(
         get_path(brand_dna, "pricing.setup_fee_default"),
@@ -813,6 +963,8 @@ def compose_vars(client_name: str, paths: dict[str, Path]) -> dict[str, str]:
         "BBB_RATING": (str(bbb_rating).upper() if bbb_rating else ""),
         "BBB_NUMBER": str(bbb_number) if bbb_number else "",
         "SETUP_FEE_DEFAULT": str(setup_fee_default).replace("$", ""),
+        "COMPANY_LICENSE_DISPLAY": str(license_display),
+        "COMPANY_ADDRESS_DISPLAY": str(address_display),
         "LIVE_PREVIEW_URL": _resolve_live_preview_url(client_name),
     }
 
@@ -1374,6 +1526,11 @@ def main() -> int:
     if not args.dry_run:
         print("\n[2/6] copying agency-static dossier (agency-logo.svg + agency-assets/)")
         copy_agency_static(proposal_dir)
+        # Overlay the student's own agency dossier (clients/_agency/assets/)
+        # AFTER copy_agency_static() wipes + recreates agency-assets/, so the
+        # student's media (founder portrait, logos, etc.) actually lands in the
+        # per-client proposal instead of being clobbered.
+        copy_agency_assets(proposal_dir)
 
         print("\n[3/6] copying per-client logo + GMB cover")
         logo_path = copy_client_logo(paths["logo_dir"], proposal_dir)
@@ -1421,7 +1578,15 @@ def main() -> int:
     out = inject_conversion_cards(out, agency_brand)
     out = inject_traffic_feature_card(out, agency_brand)
     out = inject_traffic_audit_bullets(out, agency_brand)
-    print(f"  injected agency blocks: reviews + client-builds + case-studies + trust/conversion/traffic cards")
+    out = inject_traffic_channels(out, agency_brand)
+    print(f"  injected agency blocks: reviews + client-builds + case-studies + trust/conversion/traffic cards + traffic channels")
+
+    # The injectors run after substitute(), and injected card CTAs emit a
+    # literal {{LIVE_PREVIEW_URL}} placeholder (see _render_feature_card).
+    # Re-resolve the per-lead vars over the freshly injected content so nothing
+    # leaks into the rendered proposal and the zero-{{VAR}} gate stays clean.
+    for _k, _v in vars_map.items():
+        out = out.replace("{{" + _k + "}}", _v or "")
 
     # Inject the agency's palette as a <style data-agency-palette> override
     # right before </head> so the agency's brand colors win over the template's

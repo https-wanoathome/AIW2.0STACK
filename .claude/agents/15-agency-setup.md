@@ -28,7 +28,15 @@ Ask:
 - "The verb your clients use for their work (e.g. 'install roofs', 'paint houses', 'service HVAC')" → `niche.verb`
 - "Who is your client's end customer? (e.g. 'homeowner', 'property manager', 'fleet operator')" → `niche.end_customer`
 
-Write to: `name`, `domain`, `youtube_channel`, `niche.{noun, noun_title, verb, end_customer}`
+Now the niche nouns that keep the proposal copy niche-agnostic. Explain: "These swap out the roofing-specific words in the proposal so it reads naturally for your niche. Give the singular; I'll default the plural to singular + 's' unless you tell me otherwise."
+
+- "What does your client call one unit of paid work? (the thing they sell, e.g. 'job', 'project', 'install', 'service call')" → `niche.transaction_noun` (default "job")
+- "Plural of that? (skip to use singular + 's')" → `niche.transaction_noun_plural` (default singular + "s")
+- "What does your client call the step before the sale? (the lead-conversion event, e.g. 'estimate', 'quote', 'consultation', 'inspection')" → `niche.conversion_noun` (default "estimate")
+- "Plural of that? (skip to use singular + 's')" → `niche.conversion_noun_plural` (default singular + "s")
+- "What does your client call their people who do the work? (e.g. 'crew', 'team', 'techs', 'installers')" → `niche.team_noun` (default "crew")
+
+Write to: `name`, `domain`, `youtube_channel`, `niche.{noun, noun_title, verb, end_customer, transaction_noun, transaction_noun_plural, conversion_noun, conversion_noun_plural, team_noun}`
 
 ### Section 2 — Founder profile
 
@@ -131,8 +139,16 @@ Feature card:
 - "CTA label + anchor (where on the client's site does it link to? e.g. 'See it in your service-area grid' → '#service-area')" → `traffic.feature_card.{cta_label, cta_anchor}`
 
 SEO audit bullets (the "X things we do on your SEO" list):
-- "Heading (e.g. '10 things we do on your SEO')" → `traffic.audit_heading`
+- "Heading for the audit list (e.g. 'What we do on your SEO, from day one')" → `traffic.audit_heading`
 - "5-10 bullets (each one HTML, can include `<strong>` tags)" → `traffic.audit_bullets[]`
+
+Traffic channel sub-tabs. Explain: "These are the traffic channels you actually run, shown as sub-tabs under the Traffic pillar. Each tab is a channel with a one-line description of what you do there. Keep it to the channels you really deliver. Do NOT put any prices or ad-spend numbers in here, pricing lives only in the pricing section. Default channels if you skip: Organic SEO, Paid Ads, Local Maps."
+
+Loop until the student says "done" (recommend 2-4):
+- "Channel label? (e.g. 'Organic SEO', 'Paid Ads', 'Local Maps')" → `channels[N].label`
+- "One-line description of what you do on this channel? (no prices)" → `channels[N].description`
+
+Write to: `winning_formula.traffic.channels[]`. If the student skips, write the three defaults.
 
 #### 8c · Trust pillar
 
@@ -218,7 +234,28 @@ ROI calculator defaults (illustrative; the prospect can adjust sliders live):
 - "Default 'average ticket size' display (e.g. `12,500`, `8,000`, `2,400`)" → `roi_defaults.ticket_size_display`
 - "Default 'expected monthly lift' display (e.g. `37,500`, `15,000`)" → `roi_defaults.lift_display`
 
-Write to: `pricing.{model, currency, setup_fee_price_display, monthly_fee_price_display, one_time_offer_price_display, setup_fee_standard_display, value_stack[], stacked_value_total_display, roi_defaults}`
+Pricing engine (the live, editable §16 price calculator). Explain: "This drives the interactive pricing engine in the proposal. The closer can toggle add-ons and gift free months live on the call, and the total updates in real time. Give me whole numbers here, no currency symbols or commas, because the engine does live math on them."
+
+- "Base setup fee as a plain number? (e.g. 5000)" → `pricing.base_setup` (raw int)
+- "Base monthly fee as a plain number? (e.g. 297)" → `pricing.base_monthly` (raw int)
+
+Add-on catalog. Explain: "Optional extras the prospect can add. Each one bumps the monthly total when toggled on. Loop until done."
+- "Add-on short id? (lowercase, no spaces, e.g. 'extra-pages')" → `addons[N].id`
+- "Add-on name? (e.g. 'Extra Location Pages')" → `addons[N].name`
+- "One-line description?" → `addons[N].desc`
+- "Monthly amount as a plain number? (e.g. 50)" → `addons[N].monthly` (raw int)
+
+Freebie catalog. Explain: "These are add-ons you can gift free for a set number of months (the gift-box reveal on the call). Loop until done. Skip if none."
+- "Freebie short id?" → `freebies[N].id`
+- "Freebie name?" → `freebies[N].name`
+- "Its normal monthly value as a plain number? (shown as the value being gifted)" → `freebies[N].monthly` (raw int)
+
+- "Which free-month durations should the closer be able to pick? (comma-separated whole numbers, skip for default 1, 3, 6)" → `pricing.freebie_durations` (array of ints, default [1, 3, 6])
+
+Success checklist. Explain: "A short list of what 'success' looks like once they sign, shown in the pricing section and editable on the call. 3-6 short lines."
+- Loop until done: "Checklist item? (one short line)" → `success_checklist[N]` (string)
+
+Write to: `pricing.{model, currency, setup_fee_price_display, monthly_fee_price_display, one_time_offer_price_display, setup_fee_standard_display, value_stack[], stacked_value_total_display, roi_defaults, base_setup, base_monthly, addons[], freebies[], freebie_durations, success_checklist[]}`
 
 ### Section 12.5 — Brand palette (proposal colors)
 

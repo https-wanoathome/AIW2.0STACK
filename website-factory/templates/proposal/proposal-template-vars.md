@@ -78,6 +78,41 @@ The three vars below (`{{ORG_TRAFFIC_LOSS}}`, `{{KEYWORDS_MISSED}}`, `{{DOMAIN_A
 |---|---|---|---|
 | `{{SETUP_FEE_DEFAULT}}` | `(agency-set)` | brief.md → `pricing.setup_fee_default` (fallback `(agency-set)`) | Default opening number for the editable setup-fee modal. Stored without `$` so the JS can pre-format. agency rep overrides per-call via the modal, value persists in localStorage under `agency-one-time-offer-{{CLIENT_SLUG}}`. |
 
+## Niche vocabulary (from agency-brand.json `niche.{}`)
+
+These five tokens keep niche-specific nouns out of the template body. The student fills them once in `agency-brand.json`; build-proposal.py substitutes them everywhere. All default to neutral home-service-style words so the template still reads cleanly if the student leaves them blank.
+
+| Var | Example | Source | Notes |
+|---|---|---|---|
+| `{{NICHE_TRANSACTION_NOUN}}` | `job` | agency-brand.json → `niche.transaction_noun` (default `job`) | The single unit of paid work the client sells. Used in the pricing identity line ("for less than one job"). |
+| `{{NICHE_TRANSACTION_NOUN_PLURAL}}` | `jobs` | agency-brand.json → `niche.transaction_noun_plural` (default singular + `s`) | Plural of the above. Used in the ROI label and ROI sub copy ("extra closed jobs a month"). |
+| `{{NICHE_CONVERSION_NOUN}}` | `estimate` | agency-brand.json → `niche.conversion_noun` (default `estimate`) | The booked action a site visit aims for, one step before the sale. |
+| `{{NICHE_CONVERSION_NOUN_PLURAL}}` | `estimates` | agency-brand.json → `niche.conversion_noun_plural` (default singular + `s`) | Plural of the above. Used in the pillar tag and the SERP description ("Fast estimates across ..."). |
+| `{{NICHE_TEAM_NOUN}}` | `crew` | agency-brand.json → `niche.team_noun` (default `crew`) | What the client's field team is called. Used in the pricing identity line ("win better crew"). |
+
+## Pricing engine (from agency-brand.json `pricing.{}`)
+
+These six vars feed the interactive pricing calculator (add-ons, freebies, success checklist). The four `*_JSON` vars are injected straight into JS literals, so build-proposal.py emits them with `json.dumps(...)` as valid double-quoted JSON. The catalog and base prices come ONLY from `agency-brand.json`; nothing is hardcoded in the template.
+
+| Var | Example | Source | Notes |
+|---|---|---|---|
+| `{{AGENCY_PRICING_BASE_SETUP}}` | `5000` | agency-brand.json → `pricing.base_setup` | Raw integer for the JS, no currency symbol. Base one-time setup the calculator starts from. |
+| `{{AGENCY_PRICING_BASE_MONTHLY}}` | `297` | agency-brand.json → `pricing.base_monthly` | Raw integer for the JS. Base recurring monthly the calculator starts from. |
+| `{{AGENCY_ADDONS_JSON}}` | `[{"id":"paid-social","name":"Paid Social Management","desc":"...","monthly":500}]` | agency-brand.json → `pricing.addons[]` (each `{id,name,desc,monthly}`) | Injected as `var AGENCY_ADDONS = {{AGENCY_ADDONS_JSON}};`. Valid JSON via `json.dumps`. The add-on catalog the student offers; never roofing-specific. |
+| `{{AGENCY_FREEBIES_JSON}}` | `[{"id":"priority-support","name":"Priority Support","monthly":100}]` | agency-brand.json → `pricing.freebies[]` (each `{id,name,monthly}`) | Injected as a JS literal. Items the student can toggle on for free for a set period. |
+| `{{AGENCY_FREEBIE_DURATIONS_JSON}}` | `[1,3,6]` | agency-brand.json → `pricing.freebie_durations` (default `[1,3,6]`) | JSON array of month counts the freebie can be granted for. Injected as a JS literal. |
+| `{{AGENCY_SUCCESS_CHECKLIST_JSON}}` | `["A fast, mobile-first site ...","..."]` | agency-brand.json → `pricing.success_checklist[]` | JSON array of strings. Injected as a JS literal. Niche-agnostic lines; may carry `{{NICHE_*}}` tokens that resolve before injection. |
+
+## Newly composed vars (2026 consolidation)
+
+These three vars exist in the template markup but were never composed by build-proposal.py until the 2026 consolidation. They must be emitted on every run or the zero-`{{VAR}}` gate fails. All three are empty-safe: if the source is missing, the var resolves to an empty string and the surrounding markup degrades cleanly.
+
+| Var | Example | Source | Notes |
+|---|---|---|---|
+| `{{AGENCY_TRAFFIC_AUDIT_HEADING}}` | `What we do on your SEO, from day one` | agency-brand.json → `winning_formula.traffic.audit_heading` (fallback `What we do on your SEO, from day one`) | Heading above the audit-bullets card in the Traffic accordion. Agency-side, same every client. |
+| `{{COMPANY_LICENSE_DISPLAY}}` | `License #ABC1234` | client license if available, else `""` | Per-lead. Lives inside a commented GMB block; empty-safe so the block stays clean when the client has no license on file. |
+| `{{COMPANY_ADDRESS_DISPLAY}}` | `123 Main St, Springfield` | client address if available, else `""` | Per-lead. Mini-GMB knowledge-panel address line; empty-safe when no address is known. |
+
 ## Sitemap pyramid (niche-aware)
 
 The sitemap pyramid + silo chips below the equation row are rendered by `build-proposal.py` from `templates/{niche-slug}/niche-playbook/proposal-pages.json` plus the active client's strategy. The proposal HTML template carries placeholders the renderer fills.
@@ -103,6 +138,7 @@ Some chunks of the proposal aren't string-substituted, they're regenerated entir
 | Block | Driven by | Notes |
 |---|---|---|
 | ~~§6 SEO Audit + §7 You-at-#1 + §8 Proven Blueprint + §10 Deliverables + §11 AI Infrastructure~~ | DEPRECATED 2026-05-10 | All five sections REMOVED from the canonical template. Their content has been folded into:<br>• Winning Formula → Traffic accordion (SEO + AEO card + sitemap pyramid + 10/5 audit bullets + mini-SERP + mini GMB)<br>• Winning Formula → Trust accordion (3 cards + Reputation Manager card 04)<br>• Winning Formula → Conversion accordion (Frictionless form + Mobile-first w/ day-night mockup + Smart Chatbot + Instant Callback)<br>• Dedicated AI Infrastructure section (3 GHL-style alternating rows: Chat Agent / Voice Agent / Reputation Agent)<br>The proposal generator no longer needs to generate per-lead competitor cards. |
+| Traffic channel sub-tabs inside Traffic accordion | agency-brand.json → `winning_formula.traffic.channels[]` (each `{label, description}`) | Static HTML tabs + panes injected between the `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->` and `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->` markers by build-proposal.py. One tab + pane per channel. NO dollar figures or monthly prices in the tabs (ad pricing is dropped). Example channels: Organic SEO, Paid Ads, Local Maps. |
 | Mini-SERP result list inside Traffic accordion | NONE, generic placeholders only | Lead's domain as #1 (uses `{{COMPANY_NAME}}` / `{{COMPANY_DOMAIN}}` / `{{CITY_PRIMARY_SLUG}}` / `{{YEARS_IN_BUSINESS}}` / `{{REVIEW_RATING}}` / `{{REVIEW_COUNT}}` / `{{CITY_COUNT}}` / `{{REGION_FULL}}`). Below #1, 2 dimmed generic placeholder rows ("Local Roofing Competitor / Regional player..."), NO real competitor data needed. |
 | Mini-GMB knowledge panel inside Traffic accordion | mostly vars + per-lead asset copy | Address, phone, hours, photos. Cover image at `agency-assets/gmb-cover.webp` is per-lead, see "Per-lead asset copy" below. |
 | PAGE_DATA object in `<script>` | `clients/{slug}/seo/sitemap.md` + `seo/page-briefs/` | The 17 page entries with section lists for the click-to-expand sitemap modal. |

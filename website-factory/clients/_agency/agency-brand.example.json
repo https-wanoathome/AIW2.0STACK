@@ -17,7 +17,12 @@
     "noun": "__REQUIRED__NICHE_NOUN_LOWER__",
     "noun_title": "__REQUIRED__NICHE_NOUN_TITLE__",
     "verb": "__REQUIRED__NICHE_VERB__",
-    "end_customer": "__REQUIRED__NICHE_END_CUSTOMER__"
+    "end_customer": "__REQUIRED__NICHE_END_CUSTOMER__",
+    "transaction_noun": "job",
+    "transaction_noun_plural": "jobs",
+    "conversion_noun": "estimate",
+    "conversion_noun_plural": "estimates",
+    "team_noun": "crew"
   },
   "intro": {
     "value_props": [
@@ -127,6 +132,20 @@
         "__REQUIRED__AUDIT_BULLET_3__",
         "__REQUIRED__AUDIT_BULLET_4__",
         "__REQUIRED__AUDIT_BULLET_5__"
+      ],
+      "channels": [
+        {
+          "label": "Organic SEO",
+          "description": "We rank your client for the searches their customers already type, so the site pulls in new work without paying per click."
+        },
+        {
+          "label": "Paid Ads",
+          "description": "We run targeted ads to the same audience, point them at a page built to convert, and keep the leads flowing while the organic rankings climb."
+        },
+        {
+          "label": "Local Maps",
+          "description": "We tune the map profile so your client shows up in the local pack when nearby customers look for the service, then route those calls straight to the team."
+        }
       ]
     },
     "trust": {
@@ -226,7 +245,52 @@
       "leads_per_month": "__REQUIRED__ROI_DEFAULT_LEADS_PER_MONTH__",
       "ticket_size_display": "__REQUIRED__ROI_DEFAULT_TICKET_SIZE__",
       "lift_display": "__REQUIRED__ROI_DEFAULT_LIFT__"
-    }
+    },
+    "base_setup": 5000,
+    "base_monthly": 297,
+    "addons": [
+      {
+        "id": "paid-social",
+        "name": "Paid Social Management",
+        "desc": "We build, run, and tune the ad campaigns each month so new leads keep coming in.",
+        "monthly": 500
+      },
+      {
+        "id": "local-ads",
+        "name": "Local Ads Management",
+        "desc": "We manage the local map and search ads so the team shows up first when nearby customers search.",
+        "monthly": 400
+      },
+      {
+        "id": "review-engine",
+        "name": "Review Engine",
+        "desc": "We send the follow-up that turns happy customers into fresh five-star reviews on autopilot.",
+        "monthly": 150
+      }
+    ],
+    "freebies": [
+      {
+        "id": "priority-support",
+        "name": "Priority Support",
+        "monthly": 100
+      },
+      {
+        "id": "monthly-report",
+        "name": "Monthly Performance Report",
+        "monthly": 75
+      }
+    ],
+    "freebie_durations": [1, 3, 6],
+    "success_checklist": [
+      "A fast, mobile-first site that loads in under three seconds.",
+      "Every page built to turn a visit into a booked {{NICHE_CONVERSION_NOUN}}.",
+      "Clear trust signals up top so new {{NICHE_END_CUSTOMER_PLURAL}} feel safe reaching out.",
+      "A simple form and instant callback so no lead slips through.",
+      "Local search set up so nearby {{NICHE_END_CUSTOMER_PLURAL}} find you first.",
+      "Reviews pulled in live so the proof stays current.",
+      "A {{NICHE_TEAM_NOUN}} inbox that keeps every new lead in one place.",
+      "Reporting that shows leads in, {{NICHE_CONVERSION_NOUN_PLURAL}} booked, and {{NICHE_TRANSACTION_NOUN_PLURAL}} won."
+    ]
   },
   "palette": {
     "primary": "__REQUIRED__PALETTE_PRIMARY_HEX__",

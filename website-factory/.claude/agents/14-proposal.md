@@ -15,6 +15,10 @@ The canonical template lives at `templates/proposal/proposal-template.html` (~3,
 - `clients/[Client Name]/Pipeline Data/brand/brand-dna.json`, palette, typography, founder, contact, founding year, voice register
 - `clients/[Client Name]/[Client Name] Assets/logo/`, client logo (highest-res variant)
 - `clients/[Client Name]/[Client Name] Assets/photos/`, client photo library (Stage 4 asset harvest)
+- `clients/_agency/agency-brand.json`, the agency profile read at every run. Beyond the identity / reviews / proof fields, the proposal now also reads:
+  - **Niche nouns** (keep the template niche-agnostic): `niche.transaction_noun` (default "job"), `niche.transaction_noun_plural` (default singular + "s"), `niche.conversion_noun` (default "estimate"), `niche.conversion_noun_plural` (default singular + "s"), `niche.team_noun` (default "crew"). These fill `{{NICHE_TRANSACTION_NOUN}}`, `{{NICHE_TRANSACTION_NOUN_PLURAL}}`, `{{NICHE_CONVERSION_NOUN}}`, `{{NICHE_CONVERSION_NOUN_PLURAL}}`, `{{NICHE_TEAM_NOUN}}`.
+  - **Pricing engine** (§16): `pricing.base_setup` (raw int) → `{{AGENCY_PRICING_BASE_SETUP}}`, `pricing.base_monthly` (raw int) → `{{AGENCY_PRICING_BASE_MONTHLY}}`, `pricing.addons[]` ({id,name,desc,monthly}) → `{{AGENCY_ADDONS_JSON}}`, `pricing.freebies[]` ({id,name,monthly}) → `{{AGENCY_FREEBIES_JSON}}`, `pricing.freebie_durations` (ints, default [1,3,6]) → `{{AGENCY_FREEBIE_DURATIONS_JSON}}`, `pricing.success_checklist[]` (strings) → `{{AGENCY_SUCCESS_CHECKLIST_JSON}}`. The four `*_JSON` vars are injected into JS literals via `json.dumps` and must be valid JSON.
+  - **Traffic channels** (§3 Traffic pillar): `winning_formula.traffic.channels[]` ({label,description}) → static tabs+panes injected between the `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START/END -->` markers. No prices in the tabs. `winning_formula.traffic.audit_heading` → `{{AGENCY_TRAFFIC_AUDIT_HEADING}}` (fallback "What we do on your SEO, from day one").
 - `templates/proposal/proposal-template.html`, canonical HTML with placeholders
 - `templates/proposal/proposal-template-vars.md`, variable dictionary
 - `templates/proposal/agency-logo.svg`, agency topbar + footer logo
@@ -66,15 +70,17 @@ python3 tools/build-proposal.py --client "[Client Name]"
 ```
 
 `tools/build-proposal.py` is the translation layer. It:
-1. Reads our pipeline outputs (intake, research, strategy, brand-dna, dist, assets/)
-2. Composes the placeholder values per `proposal-template-vars.md`
-3. Copies the agency-static dossier (`agency-assets/`, `agency-logo.svg`) wholesale
-4. Picks the per-lead client logo (highest-res variant) → `agency-assets/client-logo.{ext}`
-5. Picks the per-lead GMB cover photo by filename heuristic (drone > banner > truck > stock) → `agency-assets/gmb-cover.webp` (re-encoded to ~1200px)
-6. Substitutes every `{{VAR}}` in `proposal-template.html` → writes `proposal.html`
-7. Generates the `PAGE_DATA` `<script>` object from our the niche template route list + section composition
-8. Copies `[X] Website/dist/` → `[X] Proposal/build/` so the iframe at `../build/index.html` resolves
-9. Validates: zero `{{VAR}}` leakage, all per-lead assets present, the niche template build has `#hero`/`#about`/`#service-area` IDs
+1. Reads our pipeline outputs (intake, research, strategy, brand-dna, dist, assets/) and `clients/_agency/agency-brand.json`
+2. Composes the placeholder values per `proposal-template-vars.md`, including the niche nouns (`niche.transaction_noun` / `transaction_noun_plural` / `conversion_noun` / `conversion_noun_plural` / `team_noun`, with defaults) and the pricing-engine vars (`pricing.base_setup` / `base_monthly` as raw ints; `pricing.addons[]` / `freebies[]` / `freebie_durations` / `success_checklist[]` composed as valid JSON via `json.dumps` for the four `*_JSON` literals)
+3. Composes the previously-uncomposed empty-safe vars: `{{AGENCY_TRAFFIC_AUDIT_HEADING}}` (from `winning_formula.traffic.audit_heading`, fallback "What we do on your SEO, from day one"), `{{COMPANY_LICENSE_DISPLAY}}` and `{{COMPANY_ADDRESS_DISPLAY}}` (blank when the client has none)
+4. Injects the Traffic channel sub-tabs (from `winning_formula.traffic.channels[]`, no prices) between the `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START/END -->` markers
+5. Copies the agency-static dossier (`agency-assets/`, `agency-logo.svg`) wholesale, then copies the student dossier from `clients/_agency/assets/` so per-agency files land
+6. Picks the per-lead client logo (highest-res variant) → `agency-assets/client-logo.{ext}`
+7. Picks the per-lead GMB cover photo by filename heuristic (drone > banner > truck > stock) → `agency-assets/gmb-cover.webp` (re-encoded to ~1200px)
+8. Substitutes every `{{VAR}}` in `proposal-template.html` → writes `proposal.html`
+9. Generates the `PAGE_DATA` `<script>` object from our the niche template route list + section composition
+10. Copies `[X] Website/dist/` → `[X] Proposal/build/` so the iframe at `../build/index.html` resolves
+11. Validates: zero `{{VAR}}` leakage, the four `*_JSON` pricing vars parse as valid JSON, the Traffic channel block is injected with no prices, all per-lead assets present, the niche template build has `#hero`/`#about`/`#service-area` IDs
 
 ### Step 3, On validation failure, diagnose
 
@@ -150,7 +156,8 @@ Validation: 0 {{VAR}} leaked, all assets present, build IDs verified, 4/4 smoke 
 ## Pass gate
 
 - `clients/[Client Name]/[Client Name] Proposal/proposal.html` exists and is non-zero
-- `grep '{{' proposal.html` returns 0 matches (excluding comment-block `{{VAR}}` literals)
+- `grep '{{' proposal.html` returns 0 matches (excluding comment-block `{{VAR}}` literals). This includes the now-composed `{{AGENCY_TRAFFIC_AUDIT_HEADING}}`, `{{COMPANY_LICENSE_DISPLAY}}`, `{{COMPANY_ADDRESS_DISPLAY}}`
+- The four pricing `*_JSON` literals (`AGENCY_ADDONS_JSON`, `AGENCY_FREEBIES_JSON`, `AGENCY_FREEBIE_DURATIONS_JSON`, `AGENCY_SUCCESS_CHECKLIST_JSON`) each parse as valid JSON after substitution; the Traffic channel block is injected and carries no prices
 - Per-lead `agency-assets/client-logo.*` and `agency-assets/gmb-cover.webp` both present
 - agency-static dossier copied (4 case-study MP4s, 6 client-build webps, 4 owner photos, blueprint PDF, hi-res crown)
 - `clients/[Client Name]/[Client Name] Proposal/build/index.html` exists (the iframe target)

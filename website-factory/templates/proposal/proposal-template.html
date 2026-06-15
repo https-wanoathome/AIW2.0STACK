@@ -1,21 +1,27 @@
 <!--
-  AGENCY PROPOSAL TEMPLATE · canonical reference for every client proposal.
+  AGENCY PROPOSAL TEMPLATE · agency-agnostic and niche-agnostic.
 
-  Per-lead generation:
-    1. skills/06-proposal/SKILL.md reads research + content + brief from clients/{slug}/
-    2. Substitutes every {{VAR}} placeholder using values defined in templates/proposal-template-vars.md
-    3. Writes the result to clients/{slug}/proposal/proposal.html
-    4. Drops competitor PNGs into clients/{slug}/proposal/agency-assets/competitors/ (captured by agentic/tools/capture-competitor-screenshots.sh during Stage 2 research)
-    5. Each See-it-in-* link in §8 (Proven Blueprint) targets an anchor that build-template.html guarantees: #hero, #about, #service-area
+  This template carries no agency, founder, or niche specifics. Every per-lead value
+  is a {{VAR}} placeholder or an injection marker block, filled at build time.
 
-  Required-anchor contract for the build (clients/{slug}/build/index.html):
+  Per-lead generation (tools/build-proposal.py, Stage 13):
+    1. Reads pipeline data from clients/{slug}/Pipeline Data/* (intake, research,
+       strategy, sitemap, brand-dna) plus the agency profile at
+       clients/_agency/agency-brand.json.
+    2. Substitutes every {{VAR}} placeholder (mapping documented in
+       templates/proposal/proposal-template-vars.md).
+    3. Injects the marker blocks (AGENCY_*_INJECTED_START ... _END) for reviews,
+       client builds, case studies, trust / conversion / traffic cards, the traffic
+       channel sub-tabs, and the agency palette override.
+    4. Renders the niche sitemap pyramid from
+       templates/{niche-slug}/niche-playbook/proposal-pages.json into {{PYRAMID_HTML}}.
+    5. Copies the agency-static dossier + per-lead logo / GMB cover / QA-cleared build
+       into clients/{slug}/[X] Proposal/ and writes proposal.html (+ index.html mirror).
+
+  Required-anchor contract for the build (clients/{slug}/[X] Proposal/build/index.html):
     id="hero"          · hero / form section
-    id="about"         · owner / about section (also serves the "See it in your owner section" link)
+    id="about"         · owner / about section
     id="service-area"  · service-area grid section
-
-  Sections that are agency-static (do NOT vary per client): §1 Who I Am, §2 What I Do, §3 How I Do It, §4 Proof · the agency's intro content, agency proof stat, agency client count, agency proof video.
-  Sections that ARE per-client and use {{VAR}}: §5+ (Mobile-First demo through Acceptance).
-  The competitor-card grid (§7) is regenerated per lead by the build pipeline from research output.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -292,7 +298,7 @@ a{color:inherit;text-decoration:none}
 .proof-caption{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,0.55);padding:8px 14px;border-radius:6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:2;white-space:nowrap}
 .cover h1 em{font-style:normal;color:var(--agency-primary);display:inline}
 
-/* === CASE STUDIES · 2x2 placeholder grid below the $1M video (NEW 2026-05-09 per agency content brief) === */
+/* === CASE STUDIES · 2x2 placeholder grid below the agency proof video === */
 .case-studies-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:960px;margin:48px auto 0}
 @media (max-width:680px){.case-studies-grid{grid-template-columns:1fr;gap:16px}}
 .case-study-card{display:block;text-decoration:none;color:#fff;background:#0e0e10;border:1px solid rgba(238,182,68,0.16);border-radius:10px;overflow:hidden;transition:border-color 0.2s,transform 0.2s,box-shadow 0.2s}
@@ -411,6 +417,18 @@ a{color:inherit;text-decoration:none}
 
 /* Sitemap pyramid · used inside Traffic accordion (lifted from §10 - reuses existing .page-box / .pyramid-* classes already defined in DELIVERABLES block below) */
 .formula-how-content .sitemap-pyramid{margin-top:24px}
+
+/* Traffic channel sub-tabs · price-free tab row + panes inside the Traffic accordion.
+   Tabs render from the AGENCY_TRAFFIC_CHANNELS marker block; build-proposal.py overwrites
+   the default set from agency-brand.json winning_formula.traffic.channels[]. No prices. */
+.channel-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:6px;background:#FBF5E5;border:1px solid rgba(174,49,45,0.18);border-radius:10px;margin-bottom:24px}
+.channel-tab{flex:1 1 auto;min-width:200px;display:flex;align-items:center;justify-content:center;gap:8px;background:transparent;border:0;padding:11px 18px;border-radius:7px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#7A5A0A;cursor:pointer;transition:background 0.15s,color 0.15s,box-shadow 0.15s;line-height:1.2}
+.channel-tab:hover{background:rgba(255,255,255,0.55);color:#030303}
+.channel-tab.is-active{background:#fff;color:var(--agency-primary);box-shadow:0 4px 12px rgba(0,0,0,0.06),inset 0 0 0 1px rgba(174,49,45,0.30)}
+.channel-pane[hidden]{display:none}
+.channel-pane-head{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.channel-pane-title{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:900;color:#030303;letter-spacing:-0.01em;line-height:1.2}
+.channel-pane-desc{font-family:'Inter',-apple-system,'Segoe UI',sans-serif;font-size:14px;line-height:1.6;color:rgba(3,3,3,0.72)}
 
 
 /* AI card highlight · Smart Chatbot + Reputation Management get a richer treatment */
@@ -799,6 +817,102 @@ details.proposal-collapsible[open] > .ps-summary{
 .value-stack-total .vt-amount{font-family:'Montserrat',sans-serif;font-size:34px;color:var(--agency-primary);font-weight:900;letter-spacing:-0.015em;line-height:1;text-shadow:0 2px 8px rgba(174,49,45,0.12)}
 .value-stack-total .vt-amount .plus{color:var(--agency-accent)}
 
+/* ============================ PRICING ENGINE · success checklist + add-ons + freebies + offer reveal + consolidated edit modal ============================ */
+
+/* Success checklist · editable per-call list inside Pricing section */
+.success-checklist{max-width:760px;margin:32px auto 0;background:#fff;border:1.5px solid rgba(174,49,45,0.12);border-radius:12px;padding:24px 28px;box-shadow:0 8px 22px rgba(0,0,0,0.05);position:relative}
+.success-checklist-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,0.06)}
+.success-checklist-eyebrow{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--agency-primary);margin-bottom:4px}
+.success-checklist-title{font-family:'Montserrat',sans-serif;font-size:18px;font-weight:900;color:#030303;letter-spacing:-0.01em;line-height:1.2}
+.success-checklist-head > div:first-child{flex:1}
+.success-checklist-edit{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;background:rgba(174,49,45,0.06);border:1px solid rgba(174,49,45,0.20);color:rgba(174,49,45,0.55);padding:8px 12px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s,color 0.15s,border-color 0.15s;flex-shrink:0;height:fit-content}
+.success-checklist-edit:hover{background:rgba(174,49,45,0.12);color:var(--agency-primary);border-color:rgba(174,49,45,0.50)}
+.success-checklist-edit.is-active{background:var(--agency-primary);color:#fff;border-color:var(--agency-primary);font-weight:900}
+.success-checklist-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.success-checklist-row{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;background:#FBF5E5;border:1px solid rgba(238,182,68,0.30);border-radius:8px;transition:background 0.15s,border-color 0.15s}
+.success-checklist-row.is-editing{background:#fff;border-color:rgba(174,49,45,0.30)}
+.success-checklist-check{width:22px;height:22px;border-radius:5px;background:var(--agency-primary);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:900}
+.success-checklist-check::before{content:'\2713'}
+.success-checklist-text{flex:1;font-family:'Inter',-apple-system,Arial,sans-serif;font-size:14px;line-height:1.5;color:#030303;outline:none;font-weight:500}
+.success-checklist-text[contenteditable="true"]{background:#fff;border-radius:4px;padding:2px 6px;margin:-2px -6px}
+.success-checklist-row .remove-btn{background:none;border:0;color:rgba(0,0,0,0.30);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;transition:color 0.15s;display:none}
+.success-checklist-row .remove-btn:hover{color:var(--agency-primary)}
+.success-checklist.is-editing .success-checklist-row .remove-btn{display:inline-block}
+.success-checklist-add{display:none;align-items:center;gap:8px;padding:10px 14px;background:transparent;border:1.5px dashed rgba(174,49,45,0.40);border-radius:8px;color:var(--agency-primary);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;width:100%;justify-content:center;transition:background 0.15s,border-color 0.15s}
+.success-checklist-add:hover{background:rgba(174,49,45,0.06);border-color:var(--agency-primary)}
+.success-checklist.is-editing .success-checklist-add{display:inline-flex}
+
+/* Inline-editable setup + monthly prices in the Your Investment card */
+.pricing-hero{position:relative}
+.pt-amount[data-editable="true"]{outline:2px dashed rgba(238,182,68,0.55);outline-offset:4px;border-radius:4px;background:rgba(238,182,68,0.05)}
+
+/* Offer reveal on the price card · offer + gift box on top, struck setup beneath */
+.pt-amount.is-offer{display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.04}
+.pt-offer{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.pt-gift{font-size:0.6em;line-height:1}
+.pt-old-below{text-decoration:line-through;opacity:0.6;font-weight:700;font-size:0.42em;letter-spacing:0.01em;color:rgba(255,255,255,0.7)}
+/* Applied state: the gold CTA turns green when the One-Time Offer is on (alongside the confetti burst + struck setup price). */
+.setup-reveal-btn-outside.is-on{background:linear-gradient(180deg,#27A567 0%,#1F8E5A 100%);border-bottom-color:#13633e;color:#fff}
+
+/* Paid add-on chip rail inside Your Investment card */
+.addon-chips-rail{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.10);justify-content:center}
+.addon-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(238,182,68,0.12);border:1px solid rgba(238,182,68,0.40);border-radius:14px;font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:0.04em;color:var(--agency-accent)}
+.addon-chip-price{color:rgba(255,255,255,0.85);font-weight:800}
+.addon-chip-remove{background:none;border:none;color:rgba(238,182,68,0.65);cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 4px;transition:color 0.15s}
+.addon-chip-remove:hover{color:#fff}
+
+/* Freebie chip rail · bonus months bundled into the one-time offer */
+.freebie-chips-rail{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed rgba(238,182,68,0.30);justify-content:center}
+.freebie-chips-rail-label{flex:1 0 100%;text-align:center;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--agency-accent);margin-bottom:4px}
+.freebie-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:linear-gradient(135deg,rgba(238,182,68,0.18) 0%,rgba(238,182,68,0.08) 100%);border:1px solid rgba(238,182,68,0.55);border-radius:14px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.04em;color:var(--agency-accent);text-transform:uppercase}
+.freebie-chip-value{color:#fff;font-weight:700}
+
+/* Footer edit + undo actions */
+.footer-edit-actions{display:inline-flex;gap:10px;margin-top:20px;flex-wrap:wrap;justify-content:center}
+.addon-footer-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(238,182,68,0.10);border:1px solid rgba(238,182,68,0.40);color:var(--agency-accent);font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border-radius:5px;cursor:pointer;transition:background 0.18s,color 0.18s,transform 0.18s}
+.addon-footer-btn:hover{background:var(--agency-accent);color:#030303;transform:translateY(-1px)}
+.footer-undo-btn{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.22);color:rgba(255,255,255,0.7)}
+.footer-undo-btn:hover{background:rgba(255,255,255,0.14);color:#fff}
+
+/* Consolidated edit modal · dark surface, light text */
+.addon-modal{padding:0;border:none;border-radius:16px;background:#0E0F12;color:#fff;max-width:min(560px,92vw);width:520px;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,0.55),0 0 0 1px rgba(238,182,68,0.20);position:fixed;inset:0;margin:auto}
+.addon-modal::backdrop{background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.addon-modal-inner{padding:36px 32px 24px;position:relative}
+.addon-modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;transition:background 0.15s,color 0.15s}
+.addon-modal-close:hover{background:rgba(255,255,255,0.08);color:#fff}
+.addon-modal-eyebrow{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--agency-accent);margin-bottom:8px}
+.addon-modal-title{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;line-height:1.2}
+.addon-modal-sub{font-family:'Inter',sans-serif;font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:20px;line-height:1.5}
+.addon-modal-footer{padding-top:14px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.addon-modal-save{padding:11px 22px;background:var(--agency-accent);color:#030303;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;border:0;border-radius:6px;cursor:pointer;transition:background 0.15s,transform 0.15s}
+.addon-modal-save:hover{transform:translateY(-1px)}
+#editModal .addon-modal-inner{max-height:88vh;overflow-y:auto}
+.edit-grid{display:grid;grid-template-columns:1fr;gap:14px;margin:18px 0 6px}
+.edit-field{display:flex;flex-direction:column;gap:6px}
+.edit-field-label{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.82);display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.edit-field-hint,.edit-section-hint{font-weight:600;letter-spacing:0.01em;text-transform:none;color:rgba(255,255,255,0.45);font-size:10.5px}
+.edit-field-input{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);border-radius:8px;padding:10px 12px}
+.edit-field-input:focus-within{border-color:var(--agency-accent);box-shadow:0 0 0 3px rgba(238,182,68,0.18)}
+.edit-pre,.edit-post{font-weight:800;color:rgba(255,255,255,0.55);font-size:15px}
+.edit-field-input input{flex:1;border:0;outline:0;font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;color:#fff;min-width:0;background:transparent}
+.edit-section-label{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;color:var(--agency-accent);margin:22px 0 10px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.edit-list{display:flex;flex-direction:column;gap:8px}
+.edit-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.10);border-radius:10px;cursor:pointer;transition:border-color .15s,background .15s}
+.edit-row:hover{background:rgba(238,182,68,0.06);border-color:rgba(238,182,68,0.32)}
+.edit-row.is-on{border-color:rgba(238,182,68,0.55);background:rgba(238,182,68,0.10)}
+.edit-row-box{width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.30);flex-shrink:0;position:relative}
+.edit-row.is-on .edit-row-box{background:var(--agency-accent);border-color:var(--agency-accent)}
+.edit-row.is-on .edit-row-box::after{content:'\2713';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#030303;font-size:12px;font-weight:900}
+.edit-row-info{flex:1;min-width:0}
+.edit-row-name{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;color:#fff}
+.edit-row-meta{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.35}
+.edit-row-price{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;color:var(--agency-accent);flex-shrink:0}
+.edit-durs{display:flex;gap:5px;flex-shrink:0}
+.edit-dur{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;padding:5px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.7);cursor:pointer}
+.edit-dur.is-active{background:var(--agency-accent);border-color:var(--agency-accent);color:#1a1a1a}
+.edit-cancel{background:transparent;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.7);border-radius:8px;padding:12px 22px;font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+.edit-cancel:hover{background:rgba(255,255,255,0.08)}
+
 /* Risk reversal pill */
 .risk-pill{display:inline-flex;align-items:center;gap:8px;background:#EEF7E9;border:1px solid #B6D9A1;color:#2C5C13;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 14px;border-radius:20px;margin-bottom:18px}
 .risk-pill::before{content:'';width:8px;height:8px;border-radius:50%;background:#3A7C18;flex-shrink:0}
@@ -829,27 +943,8 @@ details.proposal-collapsible[open] > .ps-summary{
 .setup-reveal-btn-primary:hover{background:#FFCB58;transform:translateY(-2px);box-shadow:0 12px 28px rgba(238,182,68,0.45);color:#030303}
 .setup-reveal-btn-primary::after{display:none}
 
-/* Setup-fee modal */
-.setup-fee-modal{padding:0;border:none;border-radius:18px;background:radial-gradient(circle at top,#1F2124 0%,#030303 100%);color:#fff;max-width:min(560px,92vw);width:520px;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,0.55),0 0 0 1px rgba(238,182,68,0.20);position:fixed;inset:0;margin:auto;text-align:center}
-.setup-fee-modal::backdrop{background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-.setup-fee-modal-inner{padding:48px 40px 40px;position:relative}
-.setup-fee-modal-inner::before{content:'';position:absolute;top:-30%;right:-15%;width:380px;height:380px;background:radial-gradient(circle,rgba(238,182,68,0.14) 0%,transparent 65%);pointer-events:none}
-.setup-fee-modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:24px;cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;transition:background 0.15s,color 0.15s;z-index:3}
-.setup-fee-modal-close:hover{background:rgba(255,255,255,0.08);color:#fff}
-.setup-fee-badge-wrap{position:relative;z-index:1;display:flex;justify-content:center;margin-bottom:18px}
-.setup-fee-badge{width:140px;height:140px;background-image:url('agency-assets/agency-badge-3.webp');background-size:contain;background-repeat:no-repeat;background-position:center;filter:drop-shadow(0 8px 22px rgba(238,182,68,0.30))}
-.setup-fee-eyebrow{position:relative;z-index:1;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:var(--agency-accent);margin-bottom:14px}
-.setup-fee-amount-row{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
-.setup-fee-amount{font-family:'Montserrat',sans-serif;font-size:78px;font-weight:900;color:#fff;line-height:1;letter-spacing:-0.025em;outline:none;padding:4px 8px;border-radius:8px;transition:background 0.15s}
-.setup-fee-amount[contenteditable="true"]:hover,.setup-fee-amount[contenteditable="true"]:focus{background:rgba(238,182,68,0.12)}
-.setup-fee-edit{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,0.04);letter-spacing:0.12em;text-transform:uppercase;background:none;border:none;cursor:pointer;padding:8px 12px;border-radius:4px;transition:color 0.2s,background 0.2s,opacity 0.2s;display:inline-flex;align-items:center;gap:6px;opacity:0.06}
-.setup-fee-edit.is-active{color:var(--agency-accent);background:rgba(238,182,68,0.16);opacity:1;font-weight:800;font-size:11px;border:1px solid rgba(238,182,68,0.45)}
-.setup-fee-edit.is-active:hover{background:rgba(238,182,68,0.24)}
-.setup-fee-sub{position:relative;z-index:1;font-size:14px;color:rgba(255,255,255,0.72);line-height:1.55;max-width:400px;margin:0 auto 26px}
-.setup-fee-sub strong{color:#fff;font-weight:700}
-.setup-fee-cta{position:relative;z-index:1;display:inline-block;background:var(--agency-primary);color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;padding:14px 32px;border-radius:6px;border:none;border-bottom:4px solid var(--agency-primary-deep);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s}
-.setup-fee-cta:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(174,49,45,0.40)}
-@media (max-width:520px){.setup-fee-amount{font-size:56px}.setup-fee-badge{width:100px;height:100px}.setup-fee-modal-inner{padding:36px 24px 28px}}
+/* (Setup-fee modal CSS removed: the standalone setup-fee modal was replaced by the
+   consolidated Edit modal + gift-box One-Time Offer reveal in the pricing engine.) */
 
 /* Password gate modal · protects §4 SOP-PDF reveal */
 .sop-pw-modal{padding:0;border:none;border-radius:14px;background:radial-gradient(circle at top,#1F2124 0%,#030303 100%);color:#fff;max-width:min(440px,92vw);width:420px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(238,182,68,0.18);position:fixed;inset:0;margin:auto;text-align:center}
@@ -989,65 +1084,6 @@ details.proposal-collapsible[open] > .ps-summary{
 .accept-row-sig .accept-sig-canvas.is-signed{background:#fff}
 .accept-row-sig .accept-sig-hint{font-family:'Inter',-apple-system,Arial,sans-serif;font-size:10.5px;color:#9A9A9A;margin-top:6px;font-style:italic;letter-spacing:0.02em}
 .accept-row-sig .accept-sig-canvas.is-signed + .accept-sig-hint{display:none}
-
-/* ============================ COMPETITOR GALLERY (added 2026-05-06) ============================ */
-.section-competitors{background:linear-gradient(180deg,#030303 0%,#1F2124 100%);color:#fff;padding:88px 0}
-.section-competitors .kicker{color:var(--agency-accent)}
-.section-competitors .kicker::before{background:var(--agency-accent)}
-.section-competitors .section-title{color:#fff}
-.section-competitors .section-title em{color:var(--agency-accent)}
-.section-competitors .section-sub{color:rgba(255,255,255,0.65);max-width:780px}
-
-.competitors-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:36px}
-@media (max-width:1100px){.competitors-grid{grid-template-columns:repeat(3,1fr);gap:14px}}
-@media (max-width:768px){.competitors-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
-@media (max-width:480px){.competitors-grid{grid-template-columns:1fr;gap:14px}}
-
-.competitor-card{position:relative;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s}
-.competitor-card:hover{transform:translateY(-3px);border-color:rgba(238,182,68,0.35);box-shadow:0 12px 28px rgba(0,0,0,0.32)}
-
-.competitor-rank{position:absolute;top:10px;left:10px;width:28px;height:28px;border-radius:50%;background:var(--agency-primary);color:#fff;font-family:'Montserrat',sans-serif;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:3;box-shadow:0 4px 12px rgba(0,0,0,0.35);border:2px solid #1F2124}
-.competitor-rank.r1,.competitor-rank.r2,.competitor-rank.r3{background:linear-gradient(135deg,var(--agency-accent),#C28B22);color:#030303}
-
-.competitor-thumb{aspect-ratio:4/3;background:#0a0a0a;display:flex;flex-direction:column;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.06);position:relative}
-.competitor-chrome{background:#1a1a1a;padding:5px 8px;display:flex;align-items:center;gap:5px;flex-shrink:0;z-index:2;position:relative}
-.competitor-chrome .dots{display:flex;gap:3px}
-.competitor-chrome .dots span{width:6px;height:6px;border-radius:50%;display:block}
-.competitor-chrome .dots span:nth-child(1){background:#FF5F56}
-.competitor-chrome .dots span:nth-child(2){background:#FFBD2E}
-.competitor-chrome .dots span:nth-child(3){background:#27C93F}
-.competitor-chrome .url{flex:1;background:rgba(255,255,255,0.08);border-radius:2px;padding:2px 6px;font-size:9px;color:rgba(255,255,255,0.5);font-family:'SF Mono',Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* Hero screenshot · captured once per client during research (agentic/tools/capture-competitor-screenshots.sh) and bundled at agency-assets/competitors/{domain-slug}.png. Sits beneath the chrome, on top of the colored fallback. If a PNG ever goes missing JS adds .error and the gradient fallback shows through. */
-.competitor-screenshot{position:absolute;inset:25px 0 0 0;width:100%;height:calc(100% - 25px);object-fit:cover;object-position:top center;z-index:2;background:#0a0a0a;display:block}
-.competitor-screenshot.error{display:none}
-
-/* Fallback shown when the screenshot fails to load (img.error class added via JS, OR if loading=lazy never resolves). */
-.competitor-fallback{position:absolute;inset:25px 0 0 0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 12px;color:#fff;overflow:hidden;background:linear-gradient(135deg,var(--c-bg, #2a2a2a) 0%,rgba(0,0,0,0.55) 100%);opacity:1;pointer-events:none}
-.competitor-fallback .c-tag{font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:4px}
-.competitor-fallback .c-name{font-family:'Montserrat',sans-serif;font-size:14px;font-weight:900;letter-spacing:0.01em;line-height:1.15}
-
-.competitor-meta{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
-.competitor-meta .c-name-row{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;color:#fff;line-height:1.2;letter-spacing:0.01em}
-.competitor-meta .c-name-row .c-tag-inline{display:block;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.45);margin-top:3px}
-.competitor-meta .domain{font-size:11px;color:rgba(255,255,255,0.65);font-family:'SF Mono',Menlo,monospace;letter-spacing:0;line-height:1.2;word-break:break-all}
-.competitor-meta .meta-row{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.5);font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
-.competitor-meta .meta-row .da{color:var(--agency-accent);font-weight:800}
-
-.competitor-yours{background:linear-gradient(135deg,var(--agency-primary) 0%,var(--agency-primary-deep) 100%);border:1px solid rgba(238,182,68,0.45);box-shadow:0 0 0 1px rgba(238,182,68,0.12),0 8px 22px rgba(174,49,45,0.32)}
-.competitor-yours .competitor-rank{background:var(--agency-accent);color:#030303;border-color:var(--agency-primary-deep)}
-.competitor-yours .competitor-thumb{background:var(--agency-primary-deep);position:relative}
-.competitor-iframe{flex:1;width:100%;height:100%;border:none;display:block;background:#fff}
-.competitor-yours .competitor-fallback::before,
-.competitor-yours .competitor-fallback{background:linear-gradient(135deg,var(--agency-primary) 0%,#030303 100%)}
-.competitor-yours .competitor-meta{background:rgba(0,0,0,0.18)}
-.competitor-yours .competitor-meta .c-name-row{color:#fff}
-.competitor-yours .competitor-meta .c-name-row .c-tag-inline{color:var(--agency-accent)}
-.competitor-yours .competitor-meta .domain{color:rgba(255,255,255,0.85)}
-.competitor-yours .competitor-meta .meta-row{color:rgba(255,255,255,0.7)}
-.competitor-yours .competitor-meta .meta-row .da{color:var(--agency-accent)}
-
-.competitors-disclaimer{font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;margin-top:24px;text-align:center;font-style:italic}
 
 /* ===== Google SERP mockup (this-could-be-you card) ===== */
 .serp-mock{background:#202124;border-radius:14px;border:1px solid rgba(255,255,255,0.08);padding:28px 32px;width:100%;margin:0 auto;box-shadow:0 18px 48px rgba(0,0,0,0.32),0 4px 10px rgba(0,0,0,0.16)}
@@ -1415,7 +1451,7 @@ details.proposal-collapsible[open] > .ps-summary{
       </div>
     </div>
 
-    <!-- ============================ AGENCY-INTRO REVIEW CAROUSEL FB REVIEW CAROUSEL (moved 2026-05-10 — was a standalone .section-reviews on the dark band; 
+    <!-- AGENCY-INTRO REVIEW CAROUSEL (moved 2026-05-10, was a standalone .section-reviews on the dark band, now nested in the light founder-intro section). -->
     <div class="agency-personal-reviews-block">
       <div class="agency-reviews-aggregate">
         <span class="num">{{AGENCY_REVIEW_COUNT}}</span>
@@ -1561,7 +1597,7 @@ details.proposal-collapsible[open] > .ps-summary{
           <span class="formula-pillar-icon" aria-hidden="true">&#128197;</span>
         </div>
         <span class="formula-pillar-term">Conversion</span>
-        <span class="formula-pillar-tag">Turn visits into booked estimates</span>
+        <span class="formula-pillar-tag">Turn visits into booked {{NICHE_CONVERSION_NOUN_PLURAL}}</span>
         <button type="button" class="formula-how-btn" aria-expanded="false" aria-controls="formula-how-panel">How?<span class="formula-how-chevron" aria-hidden="true"></span></button>
       </div>
 
@@ -1579,6 +1615,35 @@ details.proposal-collapsible[open] > .ps-summary{
     <div class="formula-how-panel" id="formula-how-panel" hidden>
 
       <div class="formula-how-content" data-content="traffic" hidden>
+
+        <!-- Traffic channel sub-tabs · price-free. build-proposal.py overwrites the marker
+             contents from agency-brand.json winning_formula.traffic.channels[] = [{label, description}].
+             The default 3-channel set below ships so the template renders standalone. NO prices. -->
+        <!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->
+        <div class="channel-tabs" role="tablist" aria-label="Traffic channels">
+          <button type="button" class="channel-tab is-active" data-channel="organic-seo" role="tab" aria-selected="true">Organic SEO</button>
+          <button type="button" class="channel-tab" data-channel="paid-ads" role="tab" aria-selected="false">Paid Ads</button>
+          <button type="button" class="channel-tab" data-channel="local-maps" role="tab" aria-selected="false">Local Maps</button>
+        </div>
+        <div class="channel-pane" data-channel="organic-seo">
+          <div class="channel-pane-head">
+            <h4 class="channel-pane-title">Organic SEO</h4>
+            <p class="channel-pane-desc">Rank for the searches your customers already make. Location pages, schema, and clean internal linking so you show up first on Google and in AI answers.</p>
+          </div>
+        </div>
+        <div class="channel-pane" data-channel="paid-ads" hidden>
+          <div class="channel-pane-head">
+            <h4 class="channel-pane-title">Paid Ads</h4>
+            <p class="channel-pane-desc">Get in front of ready-to-buy customers fast while your organic ranking builds. Targeted campaigns that send qualified leads straight to your form.</p>
+          </div>
+        </div>
+        <div class="channel-pane" data-channel="local-maps" hidden>
+          <div class="channel-pane-head">
+            <h4 class="channel-pane-title">Local Maps</h4>
+            <p class="channel-pane-desc">Own the map pack in your service area. A claimed, optimised profile with synced reviews so you are the obvious local choice.</p>
+          </div>
+        </div>
+        <!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->
 
         <!-- AGENCY_TRAFFIC_FEATURE_CARD_INJECTED_START -->
         <!-- build-proposal.py injects the lead Traffic feature card here from
@@ -1626,8 +1691,8 @@ details.proposal-collapsible[open] > .ps-summary{
 
               <div class="seo-mini-serp-result is-yours">
                 <div class="seo-mini-serp-meta">{{COMPANY_DOMAIN}} &rsaquo; {{CITY_PRIMARY_SLUG}}</div>
-                <a class="seo-mini-serp-title" href="{{LIVE_PREVIEW_URL}}" target="_blank" rel="noopener">{{NICHE_NOUN_TITLE}} Contractor in {{CITY_PRIMARY}}, {{STATE_CODE}} &middot; {{COMPANY_NAME}}</a>
-                <div class="seo-mini-serp-desc"><b>Family-owned, {{YEARS_IN_BUSINESS}} years strong.</b> {{REVIEW_RATING}}&#9733; &times; {{REVIEW_COUNT}} reviews. Same-day estimates across {{CITY_COUNT}} {{REGION_FULL}} cities.</div>
+                <a class="seo-mini-serp-title" href="{{LIVE_PREVIEW_URL}}" target="_blank" rel="noopener">{{NICHE_NOUN_TITLE}} in {{CITY_PRIMARY}}, {{STATE_CODE}} &middot; {{COMPANY_NAME}}</a>
+                <div class="seo-mini-serp-desc"><b>Trusted locally, {{YEARS_IN_BUSINESS}} years strong.</b> {{REVIEW_RATING}}&#9733; &times; {{REVIEW_COUNT}} reviews. Fast {{NICHE_CONVERSION_NOUN_PLURAL}} across {{CITY_COUNT}} {{REGION_FULL}} cities.</div>
               </div>
 
               <div class="seo-mini-serp-result dim">
@@ -1651,7 +1716,7 @@ details.proposal-collapsible[open] > .ps-summary{
               </div>
               <div class="seo-mini-gmb-body">
                 <div class="seo-mini-gmb-name">{{COMPANY_NAME}}</div>
-                <div class="seo-mini-gmb-cat">{{NICHE_NOUN_TITLE}} contractor in {{CITY_PRIMARY}}, {{STATE_CODE}}</div>
+                <div class="seo-mini-gmb-cat">{{NICHE_NOUN_TITLE}} in {{CITY_PRIMARY}}, {{STATE_CODE}}</div>
                 <div class="seo-mini-gmb-rating">
                   <span class="num">{{REVIEW_RATING}}</span>
                   <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
@@ -1713,7 +1778,7 @@ details.proposal-collapsible[open] > .ps-summary{
           <input type="range" id="leads" min="5" max="150" value="{{ROI_DEFAULT_LEADS}}">
         </div>
         <div class="roi-input-group">
-          <label><span class="lbl-text">Close rate &middot; leads &rarr; sold jobs</span><span class="val"><span id="close-val">25</span><span class="post">%</span></span></label>
+          <label><span class="lbl-text">Close rate &middot; leads &rarr; sold {{NICHE_TRANSACTION_NOUN_PLURAL}}</span><span class="val"><span id="close-val">25</span><span class="post">%</span></span></label>
           <input type="range" id="close" min="10" max="50" value="25">
         </div>
         <div class="roi-input-group">
@@ -1729,7 +1794,7 @@ details.proposal-collapsible[open] > .ps-summary{
         <div class="roi-output-main">
           <div class="roi-label">Extra revenue every month</div>
           <div class="roi-figure">+$<em id="lift-val">{{ROI_DEFAULT_LIFT}}</em><span class="per">/mo</span></div>
-          <div class="roi-sub">From <strong><span id="lift-jobs-val">3</span> extra closed jobs</strong> a month , built on YOUR numbers, not agency hype.</div>
+          <div class="roi-sub">From <strong><span id="lift-jobs-val">3</span> extra closed {{NICHE_TRANSACTION_NOUN_PLURAL}}</strong> a month , built on YOUR numbers, not agency hype.</div>
         </div>
         <div class="roi-output-aux">
           <div class="roi-stat">
@@ -1783,7 +1848,7 @@ details.proposal-collapsible[open] > .ps-summary{
         </div>
         <div class="tl-body">
           <h3 class="tl-headline">{{OWNER_FIRST_NAME}} tells the story once.</h3>
-          <p class="tl-detail">15-min brand call &middot; we capture voice, photos, service-area , <strong>you write nothing</strong>.</p>
+          <p class="tl-detail">15-min brand call &middot; we capture voice, photos, positioning , <strong>you write nothing</strong>.</p>
         </div>
       </div>
       <div class="tl-step">
@@ -1819,7 +1884,7 @@ details.proposal-collapsible[open] > .ps-summary{
       <div class="timeline-outcome-arrow">&rarr;</div>
       <div class="timeline-outcome-text">
         <div class="timeline-outcome-eyebrow">After 3 Days</div>
-        <div class="timeline-outcome-line">From <strong>invisible online</strong> to a {{NICHE_NOUN}} brand <strong>{{NICHE_END_CUSTOMER_PLURAL}} pre-decide they trust</strong> , before they ever pick up the phone.</div>
+        <div class="timeline-outcome-line">From <strong>invisible online</strong> to a {{NICHE_NOUN}} brand <strong>{{NICHE_END_CUSTOMER_PLURAL}} pre-decide they trust</strong> , before they ever reach out.</div>
       </div>
     </div>
   </div>
@@ -1828,11 +1893,11 @@ details.proposal-collapsible[open] > .ps-summary{
 <!-- ============================ PRICING ============================ -->
 <section class="section section-grey">
   <div class="section-inner">
-    <h2 class="section-title" style="text-align:center;margin-left:auto;margin-right:auto">A complete {{NICHE_NOUN}} brand <em>for less than one job.</em></h2>
+    <h2 class="section-title" style="text-align:center;margin-left:auto;margin-right:auto">A complete {{NICHE_NOUN}} brand <em>for less than one {{NICHE_TRANSACTION_NOUN}}.</em></h2>
     <div class="pricing-card">
       <div class="pricing-eyebrow">Limited Slot · Same-Day Start</div>
       <div class="pricing-headline">Become {{REGION_FULL}}'s <em>most trusted</em> {{NICHE_NOUN}} brand.</div>
-      <div class="pricing-identity">The {{NICHE_NOUN_TITLE}} Website + AI lead engine + ongoing SEO , everything you need to charge what you're worth, win better crew, and win the {{NICHE_END_CUSTOMER}} before they ever pick up the phone.</div>
+      <div class="pricing-identity">The {{NICHE_NOUN_TITLE}} Website + AI lead engine + ongoing SEO , everything you need to charge what you're worth, win better {{NICHE_TEAM_NOUN}}, and win the {{NICHE_END_CUSTOMER}} before they ever reach out.</div>
 
       <!-- Value Stack (agency value-stack move) -->
       <div class="value-stack">
@@ -1849,30 +1914,52 @@ details.proposal-collapsible[open] > .ps-summary{
             <span class="vt-eyebrow">Stacked Value</span>
             <span class="vt-headline">What this is actually worth</span>
           </div>
-          <span class="vt-amount">{{AGENCY_STACKED_VALUE_TOTAL}}<span class="plus">+</span></span>
+          <span class="vt-amount" id="valueStackTotal">{{AGENCY_STACKED_VALUE_TOTAL}}<span class="plus">+</span></span>
         </div>
       </div>
 
-      <!-- Hero price -->
+      <!-- Everything you need to see success · editable per-call checklist.
+           The student ticks / types items during the discovery call so the lead sees their own
+           promises reflected back. Persists per-client via localStorage. Items seed from
+           {{AGENCY_SUCCESS_CHECKLIST_JSON}} (DEFAULT_CHECKLIST in the pricing engine JS). -->
+      <div class="success-checklist" id="successChecklist">
+        <div class="success-checklist-head">
+          <div>
+            <div class="success-checklist-eyebrow">Everything you need to see success</div>
+            <div class="success-checklist-title">100% of what we covered on the call.</div>
+          </div>
+          <button type="button" class="success-checklist-edit" id="successChecklistEditBtn" onclick="toggleSuccessChecklistEdit()" aria-label="Edit success checklist" title="Edit checklist">&#9998; Edit</button>
+        </div>
+        <ul class="success-checklist-list" id="successChecklistList"></ul>
+      </div>
+
+      <!-- Hero price · setup + monthly both editable in the consolidated Edit modal.
+           Setup persists per-client via agency-{{CLIENT_SLUG}}-setup-fee, monthly base via
+           agency-{{CLIENT_SLUG}}-monthly-base. Displayed monthly recomputes from
+           window.AGENCY_PRICING (base + selected add-ons). -->
       <div class="pricing-hero">
         <div class="ph-headline">Your Investment</div>
         <div class="pricing-tiers">
           <div class="pricing-tier primary">
             <div class="pt-label">One-Time Setup</div>
-            <div class="pt-amount">{{AGENCY_SETUP_FEE_PRICE}}</div>
+            <div class="pt-amount" id="inlineSetupAmount" data-editable="false">{{AGENCY_SETUP_FEE_PRICE}}</div>
           </div>
           <div class="pricing-tier-plus" aria-hidden="true">+</div>
           <div class="pricing-tier secondary">
             <div class="pt-label">Then</div>
-            <div class="pt-amount">{{AGENCY_MONTHLY_FEE_PRICE}}<em>/mo</em></div>
+            <div class="pt-amount"><span id="inlineMonthlyAmount" data-editable="false">{{AGENCY_MONTHLY_FEE_PRICE}}</span><em>/mo</em></div>
           </div>
         </div>
+        <!-- Selected paid add-on services render here when picked via the Edit modal -->
+        <div class="addon-chips-rail" id="addonChipsRail" hidden></div>
+        <!-- Selected freebies render here when the One-Time Offer is revealed -->
+        <div class="freebie-chips-rail" id="freebieChipsRail" hidden></div>
       </div>
 
-      <!-- Reveal One-Time Offer · moved OUTSIDE the dark price card per agency content brief 2026-05-09 -->
-      <button type="button" class="setup-reveal-btn-outside" onclick="openSetupFeeModal()">
+      <!-- Reveal One-Time Offer · gift-box toggle. Strikes the setup, shows the offer + free add-ons. -->
+      <button type="button" class="setup-reveal-btn-outside" id="offerRevealBtn" onclick="toggleOfferReveal()">
         <span class="reveal-icon" aria-hidden="true">&#127873;</span>
-        <span class="reveal-text">Reveal One-Time Offer</span>
+        <span class="reveal-text" id="offerRevealText">One-Time Offer</span>
         <span class="reveal-arrow" aria-hidden="true">&rarr;</span>
       </button>
 
@@ -1937,6 +2024,11 @@ details.proposal-collapsible[open] > .ps-summary{
     <div class="footer-meta">
       © <span id="year">2026</span> {{AGENCY_NAME}} · <a href="https://{{AGENCY_DOMAIN}}/">{{AGENCY_DOMAIN}}</a> · Proposal prepared for {{COMPANY_NAME}}
     </div>
+    <!-- Pricing controls · open the consolidated Edit modal (setup / monthly / one-time offer / add-ons / freebies) or reset to defaults. -->
+    <div class="footer-edit-actions">
+      <button type="button" class="addon-footer-btn" onclick="openEditModal()" aria-label="Edit proposal pricing and offer">&#9998;&nbsp;Edit pricing</button>
+      <button type="button" class="addon-footer-btn footer-undo-btn" onclick="agencyUndo()" aria-label="Undo all edits and reset to defaults">&#8634;&nbsp;Undo</button>
+    </div>
   </div>
 </footer>
 
@@ -1947,13 +2039,14 @@ details.proposal-collapsible[open] > .ps-summary{
   if(!leads)return;
   var leadsV=document.getElementById('leads-val'),closeV=document.getElementById('close-val'),ticketV=document.getElementById('ticket-val'),liftPctV=document.getElementById('lift-pct-val');
   var liftV=document.getElementById('lift-val'),liftJobsV=document.getElementById('lift-jobs-val'),liftYearV=document.getElementById('lift-year-val'),roiMultV=document.getElementById('roi-multiple-val'),paybackV=document.getElementById('payback-val');
-  // Parse the agency monthly fee from the rendered price element (works with any currency/format)
-  var monthlyFeeEl=document.querySelector('.pricing-tier.secondary .pt-amount');
-  var MONTHLY_PRICE=monthlyFeeEl?(parseInt(String(monthlyFeeEl.textContent).replace(/[^0-9]/g,''),10)||0):0;
+  // Live monthly retainer · read from window.AGENCY_PRICING (base + selected add-ons), not the DOM.
+  // Falls back to 0 until the pricing engine initialises; recomputed via __AGENCY_ROI_UPDATERS.
+  function monthlyPrice(){ return (window.AGENCY_PRICING && window.AGENCY_PRICING.monthly) || 0; }
   function fmt(n){return n.toLocaleString('en-US')}
   function paybackText(monthlyRev){
-    if(monthlyRev<=0)return 'never';
-    var hours=(MONTHLY_PRICE/monthlyRev)*730;        // 730 hr/month avg
+    var price=monthlyPrice();
+    if(monthlyRev<=0||price<=0)return 'never';
+    var hours=(price/monthlyRev)*730;        // 730 hr/month avg
     if(hours<1){var m=Math.ceil(hours*60);return '~'+Math.max(1,m)+(m===1?' minute':' minutes')}
     if(hours<24){var h=Math.ceil(hours);return '~'+h+(h===1?' hour':' hours')}
     var d=Math.ceil(hours/24);return '~'+d+(d===1?' day':' days');
@@ -1964,7 +2057,8 @@ details.proposal-collapsible[open] > .ps-summary{
     var extraJobs=extraLeads*(c/100);
     var extraRev=Math.round(extraJobs*t);
     var extraYear=extraRev*12;
-    var roiMult=Math.round(extraRev/MONTHLY_PRICE);
+    var price=monthlyPrice();
+    var roiMult=price>0?Math.round(extraRev/price):0;
     leadsV.textContent=l;
     closeV.textContent=c;
     ticketV.textContent=fmt(t);
@@ -1975,8 +2069,33 @@ details.proposal-collapsible[open] > .ps-summary{
     roiMultV.textContent=fmt(roiMult);
     if(paybackV)paybackV.textContent=paybackText(extraRev);
   }
+  // Register so add-on / monthly changes in the pricing engine live-update the ROI figures.
+  window.__AGENCY_ROI_UPDATERS = window.__AGENCY_ROI_UPDATERS || [];
+  window.__AGENCY_ROI_UPDATERS.push(update);
   [leads,close,ticket,lift].forEach(function(el){el.addEventListener('input',update)});
   update();
+})();
+
+// Traffic channel sub-tabs · swap the visible .channel-pane when a .channel-tab is clicked.
+// Operates on data-channel pairs. Guarded so it no-ops if the marker block is absent.
+(function(){
+  var tabs = document.querySelectorAll('.channel-tab[data-channel]');
+  if(!tabs.length) return;
+  var panes = document.querySelectorAll('.channel-pane[data-channel]');
+  tabs.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-channel');
+      tabs.forEach(function(b){
+        var on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panes.forEach(function(p){
+        var on = p.getAttribute('data-channel') === key;
+        if(on) p.removeAttribute('hidden'); else p.setAttribute('hidden','');
+      });
+    });
+  });
 })();
 
 // Winning Formula · exclusive accordion · only one pillar's "How?" panel open at a time (per agency content brief 2026-05-09)
@@ -2296,20 +2415,20 @@ const PAGE_DATA = {
   //
   // build-proposal.py replaces this entire block at Stage 13.
   home: { title:'Home', sections:[
-    ['Sticky Utility Bar','Always-visible phone + service area + emergency badge.','Trust'],
+    ['Sticky Utility Bar','Always-visible contact + key trust signal.','Trust'],
     ['Header / Navbar','Logo + nav + sticky CTA button.','Nav'],
     ['Hero Section','H1 + lead form + reviews row + owner photo.','Convert'],
     ['Trust Marquee','Review platform + certification + license logo strip.','Trust'],
     ['Services Overview','Service tiles linking to silo pages.','SEO'],
     ['About / Owner Story','Founder track record + team photo.','Trust'],
-    ['Why Us · Differentiators','Owner-led + reviews + certifications + warranty.','Pitch'],
+    ['Why Us · Differentiators','Owner-led + reviews + certifications + guarantee.','Pitch'],
     ['Process Timeline','Step-by-step delivery workflow.','Pitch'],
     ['Real Reviews Strip','Top reviews clickable to live source.','Trust'],
     ['Past Work Gallery','Project photos with filtering.','Proof'],
     ['Service Area Map','Region map with city pins linking to location pages.','SEO'],
     ['FAQ Accordion','Common questions, schema-marked.','AEO'],
     ['Final CTA','Second lead form with owner photo.','Convert'],
-    ['Footer','Sitemap + license + social + address + map embed.','Nav'],
+    ['Footer','Sitemap + social + address + map embed.','Nav'],
   ]},
 };
 
@@ -2361,77 +2480,299 @@ function openPage(id){
   dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });
 })();
 
-// ===== Setup-fee modal (editable + persisted in localStorage) =====
-function getSetupFee(){
-  try{ return localStorage.getItem('agency-one-time-offer-{{CLIENT_SLUG}}') || '5,000'; }
-  catch(e){ return '5,000'; }
-}
-function saveSetupFee(rawText){
-  var num = parseInt(String(rawText).replace(/[^0-9]/g,''), 10);
-  if(isNaN(num) || num < 0) return false;
-  var formatted = num.toLocaleString('en-US');
-  try{ localStorage.setItem('agency-one-time-offer-{{CLIENT_SLUG}}', formatted); }catch(e){}
-  var amt = document.getElementById('setupFeeAmount');
-  if(amt) amt.textContent = '$' + formatted;
-  return true;
-}
-function openSetupFeeModal(){
-  var amt = document.getElementById('setupFeeAmount');
-  if(amt){ amt.textContent = '$' + getSetupFee(); amt.setAttribute('contenteditable','false'); }
-  var btn = document.getElementById('setupFeeEditBtn');
-  if(btn){ btn.innerHTML = '&#9998; Edit'; btn.classList.remove('is-active'); }
-  document.getElementById('setupFeeModal').showModal();
-}
-function toggleSetupFeeEdit(){
-  var amt = document.getElementById('setupFeeAmount');
-  var btn = document.getElementById('setupFeeEditBtn');
-  if(!amt || !btn) return;
-  if(amt.getAttribute('contenteditable') === 'true'){
-    // Save mode → commit + lock + hide button again
-    saveSetupFee(amt.textContent);
-    amt.setAttribute('contenteditable','false');
-    btn.innerHTML = '&#9998; Edit';
-    btn.classList.remove('is-active');
-  } else {
-    // Edit mode → unlock + focus + reveal button as "Save"
-    amt.setAttribute('contenteditable','true');
-    amt.focus();
-    try{
-      var range = document.createRange();
-      range.selectNodeContents(amt);
-      range.collapse(false);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }catch(e){}
-    btn.innerHTML = '&#10003; Save';
-    btn.classList.add('is-active');
-  }
-}
-// On blur of the amount, auto-commit if in edit mode
-document.addEventListener('DOMContentLoaded', function(){
-  var amt = document.getElementById('setupFeeAmount');
-  if(!amt) return;
-  // Init from storage
-  amt.textContent = '$' + getSetupFee();
-  amt.addEventListener('blur', function(){
-    if(amt.getAttribute('contenteditable') === 'true'){
-      saveSetupFee(amt.textContent);
-      amt.setAttribute('contenteditable','false');
-      var btn = document.getElementById('setupFeeEditBtn');
-      if(btn){ btn.innerHTML = '&#9998; Edit'; btn.classList.remove('is-active'); }
-    }
-  });
-  // Enter key commits (don't insert newline)
-  amt.addEventListener('keydown', function(e){
-    if(e.key === 'Enter'){ e.preventDefault(); amt.blur(); }
-  });
-});
-// Backdrop click closes
+// ============================ PRICING ENGINE · inline setup/monthly + paid add-ons + freebies + one-time offer + success checklist + consolidated Edit modal ============================
+// Catalogs + base prices come ONLY from agency-brand.json (composed by build-proposal.py into the
+// *_JSON vars below). All rendered strings pass through escapeHtml(); state persists per-client
+// under agency-* localStorage keys.
 (function(){
-  var dlg = document.getElementById('setupFeeModal');
-  if(!dlg) return;
-  dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });
+  var CLIENT_KEY = '{{CLIENT_SLUG}}';
+  var SETUP_KEY = 'agency-' + CLIENT_KEY + '-setup-fee';
+  var MONTHLY_KEY = 'agency-' + CLIENT_KEY + '-monthly-base';
+  var ADDON_KEY = 'agency-' + CLIENT_KEY + '-addons';
+  var FREEBIE_KEY = 'agency-' + CLIENT_KEY + '-freebies';
+  var CHECKLIST_KEY = 'agency-' + CLIENT_KEY + '-success-checklist';
+  var OFFER_KEY = 'agency-one-time-offer-{{CLIENT_SLUG}}';
+  var OFFERON_KEY = 'agency-' + CLIENT_KEY + '-offer-revealed';
+
+  // Base prices · injected as raw ints by build-proposal.py from pricing.base_setup / base_monthly.
+  var BASE_SETUP = {{AGENCY_PRICING_BASE_SETUP}};
+  var BASE_MONTHLY = {{AGENCY_PRICING_BASE_MONTHLY}};
+
+  // Catalogs · injected as JSON literals by build-proposal.py from agency-brand.json pricing.{}.
+  var AGENCY_ADDONS = {{AGENCY_ADDONS_JSON}};
+  var AGENCY_FREEBIES = {{AGENCY_FREEBIES_JSON}};
+  var FREEBIE_DURATIONS = {{AGENCY_FREEBIE_DURATIONS_JSON}};
+  var DEFAULT_CHECKLIST = {{AGENCY_SUCCESS_CHECKLIST_JSON}};
+
+  // Shared pricing state · read by both the Investment card and the ROI calculator.
+  window.AGENCY_PRICING = window.AGENCY_PRICING || {
+    baseMonthly: BASE_MONTHLY,
+    baseSetup: BASE_SETUP,
+    baseOffer: BASE_SETUP,
+    addonsMonthly: 0,
+    get monthly(){ return this.baseMonthly + this.addonsMonthly; }
+  };
+  window.__AGENCY_ROI_UPDATERS = window.__AGENCY_ROI_UPDATERS || [];
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+  function fmt(n){ return n.toLocaleString('en-US'); }
+  function setHtml(el, html){ if(el) el.innerHTML = html; } // all inputs pre-escaped via escapeHtml()
+
+  // ---- localStorage helpers ----
+  function getSelected(){ try { return JSON.parse(localStorage.getItem(ADDON_KEY) || '[]'); } catch(e){ return []; } }
+  function setSelected(arr){ try { localStorage.setItem(ADDON_KEY, JSON.stringify(arr)); } catch(e){} }
+  function getFreebies(){ try { return JSON.parse(localStorage.getItem(FREEBIE_KEY) || '{}'); } catch(e){ return {}; } }
+  function setFreebies(obj){ try { localStorage.setItem(FREEBIE_KEY, JSON.stringify(obj)); } catch(e){} }
+  function getChecklist(){
+    try { var raw = localStorage.getItem(CHECKLIST_KEY); if(raw){ var p = JSON.parse(raw); if(Array.isArray(p) && p.length) return p; } } catch(e){}
+    return (DEFAULT_CHECKLIST || []).slice();
+  }
+  function setChecklist(arr){ try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(arr.filter(function(s){ return s && s.trim(); }))); } catch(e){} }
+  function getInlineSetup(){ var v = localStorage.getItem(SETUP_KEY); if(v && /^\d+$/.test(String(v).replace(/[,$]/g,''))) return parseInt(String(v).replace(/[,$]/g,''),10); return BASE_SETUP; }
+  function setInlineSetup(v){ var n = parseInt(String(v).replace(/[^0-9]/g,''),10); if(isNaN(n) || n<=0) return null; try { localStorage.setItem(SETUP_KEY, n); } catch(e){} window.AGENCY_PRICING.baseSetup = n; return n; }
+  function getInlineMonthly(){ var v = localStorage.getItem(MONTHLY_KEY); if(v && /^\d+$/.test(String(v).replace(/[,$]/g,''))) return parseInt(String(v).replace(/[,$]/g,''),10); return BASE_MONTHLY; }
+  function setInlineMonthly(v){ var n = parseInt(String(v).replace(/[^0-9]/g,''),10); if(isNaN(n) || n<=0) return null; try { localStorage.setItem(MONTHLY_KEY, n); } catch(e){} window.AGENCY_PRICING.baseMonthly = n; return n; }
+  function getOffer(){ var v = localStorage.getItem(OFFER_KEY); if(v){ var n = parseInt(String(v).replace(/[^0-9]/g,''),10); if(!isNaN(n) && n>0) return n; } return window.AGENCY_PRICING.baseSetup; }
+  function setOffer(v){ var n = parseInt(String(v).replace(/[^0-9]/g,''),10); if(isNaN(n) || n<=0) return null; try{ localStorage.setItem(OFFER_KEY, n); }catch(e){} window.AGENCY_PRICING.baseOffer = n; return n; }
+  function isOfferRevealed(){ try{ return localStorage.getItem(OFFERON_KEY) === '1'; }catch(e){ return false; } }
+  function setOfferRevealed(on){ try{ localStorage.setItem(OFFERON_KEY, on ? '1' : '0'); }catch(e){} }
+
+  function recalcAddons(){
+    var sel = getSelected(), total = 0;
+    sel.forEach(function(id){ var a = AGENCY_ADDONS.find(function(x){ return x.id===id; }); if(a) total += (+a.monthly||0); });
+    window.AGENCY_PRICING.addonsMonthly = total;
+    return total;
+  }
+  function renderAddonChips(){
+    var rail = document.getElementById('addonChipsRail');
+    if(!rail) return;
+    var sel = getSelected();
+    if(!sel.length){ rail.hidden = true; setHtml(rail, ''); return; }
+    rail.hidden = false;
+    setHtml(rail, sel.map(function(id){
+      var a = AGENCY_ADDONS.find(function(x){ return x.id===id; });
+      if(!a) return '';
+      return '<span class="addon-chip">' + escapeHtml(a.name) + ' <span class="addon-chip-price">+$' + fmt(+a.monthly||0) + '/mo</span>' +
+             '<button type="button" class="addon-chip-remove" onclick="window.__AGENCY_REMOVE_ADDON(\'' + encodeURIComponent(a.id) + '\')" aria-label="Remove ' + escapeHtml(a.name) + '">&times;</button></span>';
+    }).join(''));
+  }
+  function renderFreebieChips(){
+    var rail = document.getElementById('freebieChipsRail');
+    if(!rail) return;
+    var fb = getFreebies();
+    var ids = Object.keys(fb).filter(function(id){ return fb[id] > 0; });
+    if(!isOfferRevealed() || !ids.length){ rail.hidden = true; setHtml(rail, ''); return; }
+    rail.hidden = false;
+    setHtml(rail, '<div class="freebie-chips-rail-label">Bonus included with this offer</div>' + ids.map(function(id){
+      var f = AGENCY_FREEBIES.find(function(x){ return x.id===id; });
+      if(!f) return '';
+      var months = fb[id], value = months * (+f.monthly||0);
+      return '<span class="freebie-chip">' + months + 'MO ' + escapeHtml(f.name) + ' FREE <span class="freebie-chip-value">$' + fmt(value) + ' value</span></span>';
+    }).join(''));
+  }
+  function renderChecklist(){
+    var list = document.getElementById('successChecklistList');
+    if(!list) return;
+    var isEditing = list.closest('.success-checklist').classList.contains('is-editing');
+    var items = getChecklist();
+    setHtml(list, items.map(function(text, idx){
+      return '<li class="success-checklist-row">' +
+             '<span class="success-checklist-check" aria-hidden="true"></span>' +
+             '<span class="success-checklist-text" data-idx="' + idx + '"' + (isEditing ? ' contenteditable="true"' : '') + '>' + escapeHtml(text) + '</span>' +
+             '<button type="button" class="remove-btn" data-idx="' + idx + '" aria-label="Remove">&times;</button>' +
+             '</li>';
+    }).join('') + (isEditing ? '<button type="button" class="success-checklist-add" id="successChecklistAddBtn">+ Add item</button>' : ''));
+
+    list.querySelectorAll('.success-checklist-text').forEach(function(span){
+      if(span.getAttribute('contenteditable') !== 'true') return;
+      span.addEventListener('blur', function(){ var arr = getChecklist(); arr[+span.getAttribute('data-idx')] = span.textContent.trim(); setChecklist(arr); });
+      span.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); span.blur(); } });
+    });
+    list.querySelectorAll('.remove-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){ var arr = getChecklist(); arr.splice(+btn.getAttribute('data-idx'), 1); setChecklist(arr); renderChecklist(); });
+    });
+    var addBtn = document.getElementById('successChecklistAddBtn');
+    if(addBtn){
+      addBtn.addEventListener('click', function(){
+        var arr = getChecklist(); arr.push('New item, click to edit'); setChecklist(arr); renderChecklist();
+        setTimeout(function(){ var rows = list.querySelectorAll('.success-checklist-text'); var last = rows[rows.length - 1]; if(last){ last.focus(); document.execCommand('selectAll', false, null); } }, 30);
+      });
+    }
+  }
+  window.toggleSuccessChecklistEdit = function(){
+    var wrap = document.getElementById('successChecklist');
+    var btn = document.getElementById('successChecklistEditBtn');
+    if(!wrap || !btn) return;
+    var isEditing = wrap.classList.toggle('is-editing');
+    btn.classList.toggle('is-active', isEditing);
+    btn.innerHTML = isEditing ? '&#10003; Done' : '&#9998; Edit';
+    renderChecklist();
+  };
+  function updateMonthlyDisplay(){
+    var el = document.getElementById('inlineMonthlyAmount');
+    if(el && el.getAttribute('data-editable') !== 'true') el.textContent = '$' + fmt(window.AGENCY_PRICING.monthly);
+  }
+  function updateSetupDisplay(){
+    var el = document.getElementById('inlineSetupAmount');
+    if(!el) return;
+    var P = window.AGENCY_PRICING;
+    if(isOfferRevealed()){
+      el.classList.add('is-offer');
+      var html = '<span class="pt-offer"><span class="pt-gift" aria-hidden="true">&#127873;</span>$' + fmt(P.baseOffer) + '</span>';
+      if(P.baseOffer < P.baseSetup){ html += '<span class="pt-old-below">$' + fmt(P.baseSetup) + '</span>'; }
+      setHtml(el, html);
+    } else {
+      el.classList.remove('is-offer');
+      el.textContent = '$' + fmt(P.baseSetup);
+    }
+  }
+  function updateValueStackTotal(){
+    var total = 0;
+    document.querySelectorAll('.value-stack-list .vs-msrp').forEach(function(el){ var n = parseInt(el.textContent.replace(/[^0-9]/g,''),10); if(!isNaN(n)) total += n; });
+    var out = document.getElementById('valueStackTotal');
+    if(out && total>0) setHtml(out, '$' + fmt(total) + '<span class="plus">+</span>');
+  }
+  function fireRoiUpdaters(){ (window.__AGENCY_ROI_UPDATERS || []).forEach(function(f){ try { f(); } catch(e){} }); }
+  function refreshAll(){
+    recalcAddons(); renderAddonChips(); renderFreebieChips();
+    updateMonthlyDisplay(); updateSetupDisplay(); updateValueStackTotal(); fireRoiUpdaters();
+  }
+  window.__AGENCY_REMOVE_ADDON = function(id){ var rid = decodeURIComponent(id); setSelected(getSelected().filter(function(x){ return x !== rid; })); refreshAll(); };
+
+  // Gift-box button: reveal/hide the configured offer (strikes the setup, shows the offer + free add-ons).
+  function syncOfferBtn(){
+    var t = document.getElementById('offerRevealText');
+    var b = document.getElementById('offerRevealBtn');
+    if(t) t.textContent = 'One-Time Offer';
+    if(b) b.classList.toggle('is-on', isOfferRevealed());
+  }
+  // Confetti burst when the offer is applied. Self-contained canvas, no external library.
+  function fireConfetti(originEl){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var rect = originEl && originEl.getBoundingClientRect();
+    var ox = rect ? rect.left + rect.width/2 : window.innerWidth/2;
+    var oy = rect ? rect.top + rect.height/2 : window.innerHeight/3;
+    var cs = getComputedStyle(document.documentElement);
+    var accent = (cs.getPropertyValue('--agency-accent') || '').trim() || '#EEB644';
+    var primary = (cs.getPropertyValue('--agency-primary') || '').trim() || '#2E6E66';
+    var colors = [accent, '#FFFFFF', primary, '#FFCB58', '#F4B41A'];
+    var cv = document.createElement('canvas');
+    cv.setAttribute('aria-hidden', 'true');
+    cv.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:99999';
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = window.innerWidth * dpr; cv.height = window.innerHeight * dpr;
+    document.body.appendChild(cv);
+    var ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+    var parts = [];
+    for(var i = 0; i < 130; i++){
+      var a = (-Math.PI/2) + (Math.random() - 0.5) * Math.PI * 0.95;
+      var spd = 7 + Math.random() * 10;
+      parts.push({ x: ox, y: oy, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+        w: 6 + Math.random() * 6, h: 9 + Math.random() * 9, rot: Math.random() * 6.28,
+        vr: (Math.random() - 0.5) * 0.34, color: colors[(Math.random() * colors.length) | 0],
+        life: 0, ttl: 80 + Math.random() * 45 });
+    }
+    var raf;
+    function tick(){
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      var alive = false;
+      for(var i = 0; i < parts.length; i++){
+        var p = parts[i]; if(p.life > p.ttl) continue; alive = true;
+        p.life++; p.vy += 0.34; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.life / p.ttl);
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
+      }
+      if(alive){ raf = requestAnimationFrame(tick); }
+      else { cancelAnimationFrame(raf); if(cv.parentNode) cv.parentNode.removeChild(cv); }
+    }
+    tick();
+  }
+  window.toggleOfferReveal = function(){
+    var willReveal = !isOfferRevealed();
+    setOfferRevealed(willReveal);
+    syncOfferBtn(); refreshAll();
+    if(willReveal) fireConfetti(document.getElementById('offerRevealBtn'));
+  };
+
+  // ---- Consolidated Edit modal · staged until Confirm ----
+  var editState = { freebies: {}, addons: [] };
+  function renderEditFreebies(){
+    var fl = document.getElementById('editFreebieList');
+    if(!fl) return;
+    setHtml(fl, AGENCY_FREEBIES.map(function(f){
+      var months = editState.freebies[f.id] || 0, on = months > 0, shown = on ? months : 1;
+      var durs = (FREEBIE_DURATIONS || []).map(function(d){ return '<button type="button" data-fb="'+escapeHtml(f.id)+'" data-mo="'+d+'" class="edit-dur'+(months===d?' is-active':'')+'">'+d+'mo</button>'; }).join('');
+      return '<div class="edit-row'+(on?' is-on':'')+'" data-fb-row="'+escapeHtml(f.id)+'">'+
+        '<div class="edit-row-box" aria-hidden="true"></div>'+
+        '<div class="edit-row-info"><div class="edit-row-name">'+escapeHtml(f.name)+'</div><div class="edit-row-meta">'+shown+' month'+(shown===1?'':'s')+' free</div></div>'+
+        '<div class="edit-durs">'+durs+'</div></div>';
+    }).join(''));
+    fl.querySelectorAll('[data-fb-row]').forEach(function(row){
+      row.addEventListener('click', function(e){ if(e.target.closest('.edit-durs')) return; var id = row.getAttribute('data-fb-row'); if(editState.freebies[id]) delete editState.freebies[id]; else editState.freebies[id] = 1; renderEditFreebies(); });
+    });
+    fl.querySelectorAll('.edit-dur').forEach(function(btn){ btn.addEventListener('click', function(){ editState.freebies[btn.getAttribute('data-fb')] = parseInt(btn.getAttribute('data-mo'),10); renderEditFreebies(); }); });
+  }
+  function renderEditAddons(){
+    var al = document.getElementById('editAddonList');
+    if(!al) return;
+    setHtml(al, AGENCY_ADDONS.map(function(a){
+      var on = editState.addons.indexOf(a.id) !== -1;
+      return '<div class="edit-row'+(on?' is-on':'')+'" data-addon-row="'+escapeHtml(a.id)+'">'+
+        '<div class="edit-row-box" aria-hidden="true"></div>'+
+        '<div class="edit-row-info"><div class="edit-row-name">'+escapeHtml(a.name)+'</div><div class="edit-row-meta">'+escapeHtml(a.desc||'')+'</div></div>'+
+        '<div class="edit-row-price">+$'+fmt(+a.monthly||0)+'/mo</div></div>';
+    }).join(''));
+    al.querySelectorAll('[data-addon-row]').forEach(function(row){
+      row.addEventListener('click', function(){ var id = row.getAttribute('data-addon-row'); var i = editState.addons.indexOf(id); if(i===-1) editState.addons.push(id); else editState.addons.splice(i,1); renderEditAddons(); });
+    });
+  }
+  window.openEditModal = function(){
+    editState.freebies = {};
+    var cur = getFreebies();
+    for(var k in cur){ if(cur.hasOwnProperty(k)) editState.freebies[k] = cur[k]; }
+    editState.addons = getSelected().slice();
+    var s = document.getElementById('editSetupInput');   if(s) s.value = fmt(window.AGENCY_PRICING.baseSetup);
+    var m = document.getElementById('editMonthlyInput'); if(m) m.value = fmt(window.AGENCY_PRICING.baseMonthly);
+    var o = document.getElementById('editOfferInput');   if(o) o.value = fmt(getOffer());
+    renderEditFreebies(); renderEditAddons();
+    var dlg = document.getElementById('editModal'); if(dlg) dlg.showModal();
+  };
+  window.confirmEditModal = function(){
+    var s = document.getElementById('editSetupInput');   if(s) setInlineSetup(s.value);
+    var m = document.getElementById('editMonthlyInput'); if(m) setInlineMonthly(m.value);
+    var o = document.getElementById('editOfferInput');   if(o) setOffer(o.value);
+    setFreebies(editState.freebies); setSelected(editState.addons);
+    refreshAll(); syncOfferBtn();
+    var dlg = document.getElementById('editModal'); if(dlg) dlg.close();
+  };
+  // Undo · full reset to defaults
+  window.agencyUndo = function(){
+    try{
+      localStorage.removeItem(SETUP_KEY); localStorage.removeItem(MONTHLY_KEY);
+      localStorage.removeItem(ADDON_KEY); localStorage.removeItem(FREEBIE_KEY);
+      localStorage.removeItem(OFFER_KEY); localStorage.removeItem(OFFERON_KEY);
+    }catch(e){}
+    window.AGENCY_PRICING.baseSetup = BASE_SETUP;
+    window.AGENCY_PRICING.baseMonthly = BASE_MONTHLY;
+    window.AGENCY_PRICING.baseOffer = BASE_SETUP;
+    window.AGENCY_PRICING.addonsMonthly = 0;
+    syncOfferBtn(); refreshAll();
+  };
+
+  // Init
+  document.addEventListener('DOMContentLoaded', function(){
+    window.AGENCY_PRICING.baseSetup = getInlineSetup();
+    window.AGENCY_PRICING.baseMonthly = getInlineMonthly();
+    window.AGENCY_PRICING.baseOffer = getOffer();
+    syncOfferBtn(); refreshAll(); renderChecklist();
+    var em = document.getElementById('editModal');
+    if(em){ em.addEventListener('click', function(e){ if(e.target === em) em.close(); }); }
+  });
 })();
 
 // ===== Password gate for §4 SOP-PDF =====
@@ -2544,18 +2885,31 @@ document.addEventListener('DOMContentLoaded', function(){
     </div>
   </dialog>
 
-<!-- Setup-fee reveal modal · shown from §12 Pricing. Amount is editable + persisted in localStorage. -->
-  <dialog id="setupFeeModal" class="setup-fee-modal" aria-labelledby="setupFeeModalTitle">
-    <div class="setup-fee-modal-inner">
-      <button type="button" class="setup-fee-modal-close" aria-label="Close" onclick="document.getElementById('setupFeeModal').close()">×</button>
-      <div class="setup-fee-badge-wrap"><div class="setup-fee-badge" aria-hidden="true"></div></div>
-      <div class="setup-fee-eyebrow" id="setupFeeModalTitle">Special One-Time Offer &middot; Today Only</div>
-      <div class="setup-fee-amount-row">
-        <span class="setup-fee-amount" id="setupFeeAmount" contenteditable="false" spellcheck="false">{{AGENCY_ONE_TIME_OFFER_PRICE}}</span>
+<!-- Consolidated Edit modal · setup fee + subscription + one-time offer + free add-ons + paid add-ons.
+     Catalogs + base prices come from agency-brand.json (injected into the pricing engine JS below). -->
+  <dialog id="editModal" class="addon-modal edit-modal" aria-labelledby="editModalTitle">
+    <div class="addon-modal-inner">
+      <button type="button" class="addon-modal-close" aria-label="Close" onclick="document.getElementById('editModal').close()">×</button>
+      <div class="addon-modal-eyebrow">Edit Proposal</div>
+      <div class="addon-modal-title" id="editModalTitle">Configure the offer.</div>
+      <div class="addon-modal-sub">Set the pricing, the one-time offer, and any add-ons. Nothing on the proposal changes until you hit Confirm.</div>
+
+      <div class="edit-grid">
+        <label class="edit-field"><span class="edit-field-label">One-Time Setup Fee</span><span class="edit-field-input"><span class="edit-pre">$</span><input type="text" id="editSetupInput" inputmode="numeric" autocomplete="off" spellcheck="false"></span></label>
+        <label class="edit-field"><span class="edit-field-label">One-Time Offer <span class="edit-field-hint">shown when the gift-box is tapped</span></span><span class="edit-field-input"><span class="edit-pre">$</span><input type="text" id="editOfferInput" inputmode="numeric" autocomplete="off" spellcheck="false"></span></label>
+        <label class="edit-field"><span class="edit-field-label">Monthly Subscription</span><span class="edit-field-input"><span class="edit-pre">$</span><input type="text" id="editMonthlyInput" inputmode="numeric" autocomplete="off" spellcheck="false"><span class="edit-post">/mo</span></span></label>
       </div>
-      <p class="setup-fee-sub">Sign on the call , lock in this rate instead of the standard <strong>{{AGENCY_SETUP_FEE_STANDARD}} setup</strong>. Everything included: build, AI, content, SEO, launch. <strong>100% money-back guaranteed.</strong></p>
-      <button type="button" class="setup-fee-edit" onclick="toggleSetupFeeEdit()" id="setupFeeEditBtn">&#9998; Edit</button>
-      <div style="margin-top:18px"><button type="button" class="setup-fee-cta" onclick="document.getElementById('setupFeeModal').close()">Got it , let's roll</button></div>
+
+      <div class="edit-section-label">Free Add-Ons <span class="edit-section-hint">bonus months bundled into the one-time offer</span></div>
+      <div class="edit-list" id="editFreebieList"></div>
+
+      <div class="edit-section-label">Paid Add-On Services <span class="edit-section-hint">stacked onto the monthly subscription</span></div>
+      <div class="edit-list" id="editAddonList"></div>
+
+      <div class="addon-modal-footer">
+        <button type="button" class="edit-cancel" onclick="document.getElementById('editModal').close()">Cancel</button>
+        <button type="button" class="addon-modal-save" onclick="confirmEditModal()">Confirm</button>
+      </div>
     </div>
   </dialog>
 

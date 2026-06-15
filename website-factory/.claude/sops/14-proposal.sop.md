@@ -479,9 +479,38 @@ The 4-card grid renders if there are 3-4 case studies. If only 1-2 case studies 
 - `.agency-reviews-prev { left: 8px }` / `.agency-reviews-next { right: 8px }` (positioned inside the gutter, not overlapping cards).
 - Mobile (≤768px): `.agency-reviews-carousel-wrap { padding: 0 }` + arrows hidden (swipe).
 
+## Traffic channel sub-tabs (agency-configured, §3 Winning Formula / Traffic pillar)
+
+The Traffic pillar carries a set of sub-tabs that name the traffic channels the agency runs (Organic SEO, Paid Ads, Local Maps, etc.). The tabs are agency-configured, not per-client, and they are niche-agnostic.
+
+- **Source:** `agency-brand.json` `winning_formula.traffic.channels[]`, each entry `{label, description}`.
+- **Injection, not a JSON var:** `build-proposal.py` builds the static HTML tabs + panes and writes them between the markers `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->` and `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->` in the template. This mirrors how the Reviews and Case-Studies markers work, the block is composed in python and dropped in whole, it is not a `{{VAR}}`.
+- **Default channels** (when the agency has not set any): `Organic SEO`, `Paid Ads`, `Local Maps`, each with a one-line description.
+- **No prices in the tabs.** ABSOLUTELY no dollar figures, monthly amounts, ad-spend numbers, or any pricing inside the channel tabs or panes. Pricing lives only in §16 and the pricing engine. Per operator direction, ad pricing was dropped from the channel tabs.
+- **Audit heading:** the "X things we do on your SEO" heading is composed in python from `winning_formula.traffic.audit_heading` into `{{AGENCY_TRAFFIC_AUDIT_HEADING}}` (fallback "What we do on your SEO, from day one"). This var must be composed; an uncomposed `{{AGENCY_TRAFFIC_AUDIT_HEADING}}` fails the zero-leakage gate.
+
+## Pricing engine (§16 Investment, consolidated)
+
+§16 ships a single consolidated pricing engine driven entirely from `agency-brand.json` `pricing.*`. There are no hardcoded prices in the template; every number comes from the agency profile.
+
+- **Base prices (raw ints for the JS math):**
+  - `{{AGENCY_PRICING_BASE_SETUP}}` from `pricing.base_setup` (e.g. 5000)
+  - `{{AGENCY_PRICING_BASE_MONTHLY}}` from `pricing.base_monthly` (e.g. 297)
+  - These are emitted as raw integers, not display strings, because the live pricing math reads them in JS.
+- **Add-on catalog:** `{{AGENCY_ADDONS_JSON}}` from `pricing.addons[]`, each `{id, name, desc, monthly}`. Toggling an add-on adds its monthly amount to the running total.
+- **Freebie catalog:** `{{AGENCY_FREEBIES_JSON}}` from `pricing.freebies[]`, each `{id, name, monthly}`. A freebie is an add-on given free for a chosen duration (the gift-box reveal).
+- **Freebie durations:** `{{AGENCY_FREEBIE_DURATIONS_JSON}}` from `pricing.freebie_durations` (array of ints, default `[1, 3, 6]`).
+- **Success checklist:** `{{AGENCY_SUCCESS_CHECKLIST_JSON}}` from `pricing.success_checklist[]` (array of strings). Editable in the Edit modal.
+- **Edit modal:** the closer opens one consolidated Edit modal on the call to toggle add-ons, set freebies + their duration, and edit the success-checklist items. The live total updates as items toggle.
+- **Gift-box reveal:** freebies present as a gift-box that reveals the free-for-N-months framing when opened.
+- **JSON-literal injection.** The four `*_JSON` vars are substituted directly into JS literals, for example `var AGENCY_ADDONS = {{AGENCY_ADDONS_JSON}};`. `build-proposal.py` composes them with `json.dumps(...)` so they emit valid, double-quoted JSON. A malformed value breaks the inline script and the whole pricing engine, so the validation gate checks these parse as JSON after substitution.
+
 ## Banned executions
 
 - ❌ Static screenshot of the build (must be live iframe)
+- ❌ Any dollar figure, monthly price, or ad-spend number inside the Traffic channel sub-tabs or panes (pricing lives only in §16 / the pricing engine)
+- ❌ Hardcoding prices, add-ons, freebies, or success-checklist items in the template. All come from `agency-brand.json` `pricing.*`. Never reintroduce KCA's hardcoded $1000 / $2500 / $297 / $5000 literals.
+- ❌ Emitting any `*_JSON` pricing var as a non-JSON value (single quotes, trailing comma, unquoted keys). `build-proposal.py` must use `json.dumps(...)` so each parses as valid JSON after substitution.
 - ❌ Generic "Lorem ipsum" or unfilled `[PLACEHOLDER]` text, every field is real or auto-derived
 - ❌ Pricing without the **Value Stack** + risk-reversal pill + dark hero monthly-fee card. The flat 2-row "setup + monthly" without the stack is DEPRECATED.
 - ❌ **Mentioning "$1,000 setup fee" anywhere in the proposal**, `$1,000` is dropped sitewide. Setup fee is variable per client and discussed elsewhere; the proposal says "+ one-time setup fee" only. Also banned: "discussed on your sales call", "varies by complexity", or any other apologetic qualifier on the sub-line.
@@ -501,6 +530,17 @@ The 4-card grid renders if there are 3-4 case studies. If only 1-2 case studies 
 - ❌ Replacing {{AGENCY_NAME}} video testimonials (§11) with client-specific videos, §11 is {{AGENCY_NAME}}'s portfolio (other roofing owners vouching for {{AGENCY_NAME}}), not the client's own video. Adding a client-specific video later is fine in a different section; never overwrite §11.
 - ❌ Reverting §11 to a single-active-with-blurred-sides slider, the grid renders all 4 stories at once on desktop and stacks them on mobile, which is the canonical layout. A slider hides 3 of 4 stories behind navigation gestures and is banned.
 - ❌ Moving §10 + §11 outside the ROI → testimonials → Pricing flow. The order is doubt-reducer → social proof → ask. Re-ordering breaks the close.
+
+## Validation contract
+
+Before a proposal ships, all of these must hold:
+
+- **Zero `{{VAR}}` leakage.** `grep '{{' proposal.html` returns 0 matches (excluding the header-comment block). This still includes the three vars that were previously never composed and must now be composed in python: `{{AGENCY_TRAFFIC_AUDIT_HEADING}}`, `{{COMPANY_LICENSE_DISPLAY}}`, `{{COMPANY_ADDRESS_DISPLAY}}` (the last two are empty-safe, blank when the client has no license/address).
+- **Valid JSON in the pricing engine.** After substitution, each of `{{AGENCY_ADDONS_JSON}}`, `{{AGENCY_FREEBIES_JSON}}`, `{{AGENCY_FREEBIE_DURATIONS_JSON}}`, `{{AGENCY_SUCCESS_CHECKLIST_JSON}}` must parse as valid JSON (they are injected straight into JS literals via `json.dumps`). A malformed value silently breaks the inline script.
+- **Traffic channel block injected.** The content between `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_START -->` and `<!-- AGENCY_TRAFFIC_CHANNELS_INJECTED_END -->` is filled from `winning_formula.traffic.channels[]` and contains no prices.
+- **No fabrication.** Every claim, stat, and number traces back to a real source file (agency-brand.json or the client pipeline data). No placeholder numbers.
+- **No em-dashes** in any rendered text (Layer 0 Golden Rule).
+- Plus the existing gates: per-lead assets present, build anchor IDs present, 4/4 Vercel smoke checks pass.
 
 ## Output artifact
 

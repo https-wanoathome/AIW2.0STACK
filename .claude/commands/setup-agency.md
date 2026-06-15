@@ -10,14 +10,14 @@ Why it matters: Stage 13 (proposal builder) reads `website-factory/clients/_agen
 
 What the agent collects:
 
-1. **Agency identity + niche vocab**: agency name, domain, YouTube channel, plus the niche noun (e.g. "roofing", "painting"), title-case version, niche verb, and your client's end customer (e.g. "homeowner"). The niche vocab fills the niche-specific sentinels in the proposal so the same template works for any vertical.
+1. **Agency identity + niche vocab**: agency name, domain, YouTube channel, plus the niche noun (e.g. "roofing", "painting"), title-case version, niche verb, and your client's end customer (e.g. "homeowner"). Also the niche nouns that swap the roofing-specific words out of the proposal copy: the transaction noun (what one unit of paid work is called, e.g. "job"), the conversion noun (the step before the sale, e.g. "estimate"), and the team noun (what the crew is called, e.g. "crew"). The niche vocab fills the niche-specific sentinels in the proposal so the same template works for any vertical.
 2. **Founder profile**: full name, first name, title, portrait photo, signature, owner pronoun
 3. **Intro section**: three value-prop bullets (numbered stats with descriptors), a one-line promise, a bold conclusion line, portrait caption
 4. **Review carousel**: 3+ written testimonials with reviewer name, platform (google/facebook/etc.), rating, avatar photo, full text. Pulled from your existing past work.
 5. **Client-build carousel**: 3+ websites you've built. Live URL + screenshot + owner quote + owner name.
 6. **Case-study videos**: 1-4 short video testimonials from past clients. MP4 files dropped into `clients/_agency/assets/case-studies/`.
 7. **Proof video + stat**: your flagship "this is what we deliver" video. Either a YouTube URL or a local MP4. Big proof stat for the H2, stat subtitle, one-sentence intro paragraph, video title, thumbnail URL.
-8. **Winning Formula**: the three levers you pull when you ship a website. Title + one-liner + details HTML for each. Plus the outcome line at the end of the equation (e.g. "More Leads Booked").
+8. **Winning Formula**: the three levers you pull when you ship a website. Title + one-liner + details HTML for each. Plus the outcome line at the end of the equation (e.g. "More Leads Booked"). Under the Traffic lever you also set the SEO audit heading and the traffic channel sub-tabs (each a channel label + one-line description, e.g. Organic SEO / Paid Ads / Local Maps). No prices go in the channel tabs.
 9. **Three reasons "worth the call"**: the three cards in §E. Title + body for each. Usually guarantee / value / niche-expertise.
 10. **AI Infrastructure stack**: the platforms you set up for lead handling (e.g., GoHighLevel, Make.com, etc.) + a details paragraph.
 11. **Timeline**: how fast you ship (default 3 days) + the step-by-step breakdown.
@@ -28,6 +28,7 @@ What the agent collects:
    - Value Stack: 5 line items, each with a name + MSRP display string (e.g. `Custom Website Build` → `$12,000` (use your standard MSRP))
    - Stacked Value total: sum of the 5 MSRPs (e.g. `$12,000` — student's own value-stack total)
    - ROI calculator defaults: leads-per-month + ticket-size + expected monthly lift (illustrative; prospect adjusts via sliders)
+   - Pricing engine: a base setup fee + base monthly fee as plain numbers (the engine does live math on them), an add-on catalog (id + name + description + monthly), a freebie catalog (id + name + monthly value, gifted free for a chosen duration), the free-month durations to offer (default 1, 3, 6), and a short success checklist the closer can edit on the call
 14. **Brand palette** (drives every accent color in the proposal):
    - Primary hex (CTAs, kickers, primary buttons)
    - Primary-deep hex (button hover + bevel; darker variant of primary)
